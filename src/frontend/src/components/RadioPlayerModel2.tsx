@@ -168,12 +168,12 @@ export function RadioPlayerModel2() {
         }}
       />
 
-      {/* Official logo — fixed to left side, vertically centered */}
-      <div className="fixed left-0 top-1/2 -translate-y-1/2 z-50">
+      {/* Official logo — fixed bottom left, flush to edge */}
+      <div className="fixed bottom-4 left-0 z-50">
         <img
           src={OFFICIAL_URL}
           alt="Official"
-          className="h-20 w-auto object-contain"
+          className="h-14 w-auto object-contain"
           style={{ display: "block" }}
         />
       </div>
@@ -204,7 +204,7 @@ export function RadioPlayerModel2() {
             <span
               className="text-[10px] font-bold tracking-[0.18em] uppercase px-2 py-0.5 rounded-full"
               style={{
-                color: "#00c8dc",
+                color: isPlaying ? "#ff2222" : "#00c8dc",
                 background: "rgba(0,95,107,0.25)",
                 border: "1px solid rgba(0,95,107,0.5)",
               }}
