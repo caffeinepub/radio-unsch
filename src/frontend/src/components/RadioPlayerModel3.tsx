@@ -222,7 +222,10 @@ export function RadioPlayerModel3() {
           <div className="absolute top-5 right-8 flex items-center gap-1.5">
             <span
               className="live-dot w-2 h-2 rounded-full"
-              style={{ background: NEON, boxShadow: `0 0 8px ${NEON}` }}
+              style={{
+                background: isPlaying ? "#ff2222" : NEON,
+                boxShadow: isPlaying ? "0 0 8px #ff2222" : `0 0 8px ${NEON}`,
+              }}
             />
             <span
               className="text-[10px] font-bold tracking-[0.2em] uppercase"

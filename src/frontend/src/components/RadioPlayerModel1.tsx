@@ -180,7 +180,7 @@ export function RadioPlayerModel1() {
           <div className="self-end flex items-center gap-1.5">
             <span
               className="live-dot w-1.5 h-1.5 rounded-full"
-              style={{ background: "#005f6b" }}
+              style={{ background: isPlaying ? "#ff2222" : "#005f6b" }}
             />
             <span
               className="text-[10px] font-semibold tracking-[0.18em] uppercase"

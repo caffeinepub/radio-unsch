@@ -197,7 +197,7 @@ export function RadioPlayerModel2() {
           <div className="absolute top-5 right-5 flex items-center gap-1.5">
             <span
               className="live-dot w-2 h-2 rounded-full"
-              style={{ background: "#005f6b" }}
+              style={{ background: isPlaying ? "#ff2222" : "#005f6b" }}
             />
             <span
               className="text-[10px] font-bold tracking-[0.18em] uppercase px-2 py-0.5 rounded-full"
