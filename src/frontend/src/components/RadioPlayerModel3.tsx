@@ -1,19 +1,12 @@
 import { Slider } from "@/components/ui/slider";
-import {
-  Music,
-  Pause,
-  Play,
-  Radio,
-  Users,
-  Volume2,
-  VolumeX,
-} from "lucide-react";
+import { Music, Pause, Play, Radio, Volume2, VolumeX } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRadioMetadata } from "../hooks/useRadioMetadata";
 
 const STREAM_URL = "https://studio5.live/listen/radio_unsch/radio.mp3";
 const LOGO_URL = "/assets/uploads/cc-ok-1-1.jpg";
+const WHATSAPP_URL = "/assets/uploads/whatsapp-2-1.png";
 const NEON = "#00d4e8";
 const EQ_BARS = ["eq-bar-1", "eq-bar-2", "eq-bar-3", "eq-bar-4", "eq-bar-5"];
 
@@ -40,7 +33,6 @@ export function RadioPlayerModel3() {
   const artistName = metadata?.artist || "Radio UNSCH";
   const albumName = metadata?.album || "";
   const albumArt = metadata?.art || "";
-  const listeners = metadata?.listeners ?? 0;
   const elapsed = metadata?.elapsed ?? 0;
   const duration = metadata?.duration ?? 0;
   const remaining = metadata?.remaining ?? 0;
@@ -235,18 +227,13 @@ export function RadioPlayerModel3() {
             </span>
           </div>
 
-          {/* Station name — neon glow text */}
-          <h1
-            className="text-3xl font-black tracking-wider uppercase mt-4"
-            style={{
-              color: NEON,
-              textShadow: `0 0 10px ${NEON}, 0 0 30px rgba(0,212,232,0.5)`,
-              fontFamily: "'Figtree', sans-serif",
-              letterSpacing: "0.12em",
-            }}
+          {/* Station name — small dark gray */}
+          <p
+            className="text-lg font-semibold tracking-[0.2em] uppercase mt-4"
+            style={{ color: "#555555", fontFamily: "'Figtree', sans-serif" }}
           >
             RADIO UNSCH
-          </h1>
+          </p>
 
           {/* Square album art with neon frame */}
           <div
@@ -317,14 +304,6 @@ export function RadioPlayerModel3() {
                   exit={{ opacity: 0, x: 10 }}
                   className="flex flex-col gap-2"
                 >
-                  {isPlaying && (
-                    <p
-                      className="text-[10px] font-bold tracking-[0.25em] uppercase"
-                      style={{ color: NEON, textShadow: `0 0 8px ${NEON}` }}
-                    >
-                      ▶ AHORA SUENA
-                    </p>
-                  )}
                   <p
                     className="text-xl font-bold leading-tight"
                     style={{ color: "#ffffff" }}
@@ -429,15 +408,38 @@ export function RadioPlayerModel3() {
             )}
           </AnimatePresence>
 
-          {listeners > 0 && (
-            <div
-              className="flex items-center gap-1.5 text-xs"
+          {/* Volume — above play button */}
+          <div className="w-full flex items-center gap-2">
+            <button
+              type="button"
+              onClick={toggleMute}
+              className="shrink-0"
+              style={{ color: NEON }}
+              aria-label={isMuted ? "Activar" : "Silenciar"}
+            >
+              {isMuted || volume === 0 ? (
+                <VolumeX className="w-3.5 h-3.5" />
+              ) : (
+                <Volume2 className="w-3.5 h-3.5" />
+              )}
+            </button>
+            <Slider
+              data-ocid="m3.input"
+              min={0}
+              max={100}
+              step={1}
+              value={[isMuted ? 0 : volume]}
+              onValueChange={handleVolumeChange}
+              className="flex-1"
+              aria-label="Volumen"
+            />
+            <span
+              className="text-[10px] w-7 text-right"
               style={{ color: NEON }}
             >
-              <Users className="w-3.5 h-3.5" />
-              <span>{listeners.toLocaleString("es-PE")} oyentes</span>
-            </div>
-          )}
+              {isMuted ? 0 : volume}%
+            </span>
+          </div>
 
           {/* Neon play button */}
           <motion.button
@@ -469,41 +471,23 @@ export function RadioPlayerModel3() {
             )}
           </motion.button>
 
-          {/* Volume */}
-          <div className="w-full flex items-center gap-3">
-            <button
-              type="button"
-              onClick={toggleMute}
-              className="shrink-0"
-              style={{ color: NEON }}
-              aria-label={isMuted ? "Activar" : "Silenciar"}
-            >
-              {isMuted || volume === 0 ? (
-                <VolumeX className="w-4 h-4" />
-              ) : (
-                <Volume2 className="w-4 h-4" />
-              )}
-            </button>
-            <Slider
-              data-ocid="m3.input"
-              min={0}
-              max={100}
-              step={1}
-              value={[isMuted ? 0 : volume]}
-              onValueChange={handleVolumeChange}
-              className="flex-1"
-              aria-label="Volumen"
-            />
-            <span className="text-xs w-8 text-right" style={{ color: NEON }}>
-              {isMuted ? 0 : volume}%
-            </span>
-          </div>
-
           {metaLoading && (
             <p className="text-xs" style={{ color: "rgba(0,212,232,0.4)" }}>
               Actualizando...
             </p>
           )}
+
+          {/* WhatsApp contact — bottom left */}
+          <div className="w-full flex items-center gap-2 mt-2">
+            <img
+              src={WHATSAPP_URL}
+              alt="WhatsApp"
+              className="w-8 h-8 rounded-lg object-cover bg-white"
+            />
+            <span className="text-sm" style={{ color: NEON }}>
+              939 935 295
+            </span>
+          </div>
         </div>
       </motion.div>
     </div>

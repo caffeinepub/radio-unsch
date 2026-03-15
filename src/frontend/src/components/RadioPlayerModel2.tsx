@@ -1,19 +1,12 @@
 import { Slider } from "@/components/ui/slider";
-import {
-  Music,
-  Pause,
-  Play,
-  Radio,
-  Users,
-  Volume2,
-  VolumeX,
-} from "lucide-react";
+import { Music, Pause, Play, Radio, Volume2, VolumeX } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRadioMetadata } from "../hooks/useRadioMetadata";
 
 const STREAM_URL = "https://studio5.live/listen/radio_unsch/radio.mp3";
 const LOGO_URL = "/assets/uploads/cc-ok-1-1.jpg";
+const OFFICIAL_URL = "/assets/uploads/OFFICIAL-1-1.png";
 const EQ_BARS = ["eq-bar-1", "eq-bar-2", "eq-bar-3", "eq-bar-4", "eq-bar-5"];
 
 const formatTime = (s: number) =>
@@ -39,7 +32,6 @@ export function RadioPlayerModel2() {
   const artistName = metadata?.artist || "Radio UNSCH";
   const albumName = metadata?.album || "";
   const albumArt = metadata?.art || "";
-  const listeners = metadata?.listeners ?? 0;
   const elapsed = metadata?.elapsed ?? 0;
   const duration = metadata?.duration ?? 0;
   const remaining = metadata?.remaining ?? 0;
@@ -176,6 +168,16 @@ export function RadioPlayerModel2() {
         }}
       />
 
+      {/* Official logo — fixed to left side, vertically centered */}
+      <div className="fixed left-0 top-1/2 -translate-y-1/2 z-50">
+        <img
+          src={OFFICIAL_URL}
+          alt="Official"
+          className="h-20 w-auto object-contain"
+          style={{ display: "block" }}
+        />
+      </div>
+
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -212,7 +214,7 @@ export function RadioPlayerModel2() {
           </div>
 
           {/* Album art with pulsing glow ring */}
-          <div className="relative">
+          <div className="relative mt-6">
             {isPlaying && (
               <div
                 className="pulse-ring absolute inset-0 rounded-full"
@@ -245,20 +247,14 @@ export function RadioPlayerModel2() {
 
           {/* Station name */}
           <div className="text-center">
-            <h1
-              className="text-2xl font-bold"
+            <p
+              className="text-lg font-semibold tracking-[0.2em] uppercase"
               style={{
-                color: "rgba(255,255,255,0.92)",
+                color: "#555555",
                 fontFamily: "'Playfair Display', serif",
               }}
             >
               Radio UNSCH
-            </h1>
-            <p
-              className="text-xs mt-1"
-              style={{ color: "rgba(0,200,220,0.6)" }}
-            >
-              Universidad Nacional de San Cristóbal de Huamanga
             </p>
           </div>
 
@@ -332,14 +328,6 @@ export function RadioPlayerModel2() {
                   exit={{ opacity: 0, y: -8 }}
                   className="flex flex-col gap-2"
                 >
-                  {isPlaying && (
-                    <p
-                      className="text-[10px] font-bold tracking-widest uppercase"
-                      style={{ color: "#00c8dc" }}
-                    >
-                      AHORA SUENA
-                    </p>
-                  )}
                   <p
                     className="text-xl font-bold leading-tight"
                     style={{ color: "rgba(255,255,255,0.9)" }}
@@ -421,15 +409,38 @@ export function RadioPlayerModel2() {
             )}
           </div>
 
-          {listeners > 0 && (
-            <div
-              className="flex items-center gap-1.5 text-xs"
+          {/* Volume — above play button */}
+          <div className="w-full flex items-center gap-2">
+            <button
+              type="button"
+              onClick={toggleMute}
+              className="shrink-0"
+              style={{ color: "#005f6b" }}
+              aria-label={isMuted ? "Activar" : "Silenciar"}
+            >
+              {isMuted || volume === 0 ? (
+                <VolumeX className="w-3.5 h-3.5" />
+              ) : (
+                <Volume2 className="w-3.5 h-3.5" />
+              )}
+            </button>
+            <Slider
+              data-ocid="m2.input"
+              min={0}
+              max={100}
+              step={1}
+              value={[isMuted ? 0 : volume]}
+              onValueChange={handleVolumeChange}
+              className="flex-1"
+              aria-label="Volumen"
+            />
+            <span
+              className="text-[10px] w-7 text-right"
               style={{ color: "rgba(0,95,107,0.7)" }}
             >
-              <Users className="w-3.5 h-3.5" />
-              <span>{listeners.toLocaleString("es-PE")} oyentes</span>
-            </div>
-          )}
+              {isMuted ? 0 : volume}%
+            </span>
+          </div>
 
           {/* Outlined play button with teal glow */}
           <motion.button
@@ -461,39 +472,6 @@ export function RadioPlayerModel2() {
               <Play className="w-7 h-7 ml-1" />
             )}
           </motion.button>
-
-          {/* Volume */}
-          <div className="w-full flex items-center gap-3">
-            <button
-              type="button"
-              onClick={toggleMute}
-              className="shrink-0"
-              style={{ color: "#005f6b" }}
-              aria-label={isMuted ? "Activar" : "Silenciar"}
-            >
-              {isMuted || volume === 0 ? (
-                <VolumeX className="w-4 h-4" />
-              ) : (
-                <Volume2 className="w-4 h-4" />
-              )}
-            </button>
-            <Slider
-              data-ocid="m2.input"
-              min={0}
-              max={100}
-              step={1}
-              value={[isMuted ? 0 : volume]}
-              onValueChange={handleVolumeChange}
-              className="flex-1"
-              aria-label="Volumen"
-            />
-            <span
-              className="text-xs w-8 text-right"
-              style={{ color: "rgba(0,95,107,0.7)" }}
-            >
-              {isMuted ? 0 : volume}%
-            </span>
-          </div>
 
           {metaLoading && (
             <p className="text-xs" style={{ color: "rgba(0,95,107,0.4)" }}>

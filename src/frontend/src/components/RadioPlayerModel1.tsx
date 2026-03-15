@@ -1,19 +1,12 @@
 import { Slider } from "@/components/ui/slider";
-import {
-  Music,
-  Pause,
-  Play,
-  Radio,
-  Users,
-  Volume2,
-  VolumeX,
-} from "lucide-react";
+import { Music, Pause, Play, Radio, Volume2, VolumeX } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRadioMetadata } from "../hooks/useRadioMetadata";
 
 const STREAM_URL = "https://studio5.live/listen/radio_unsch/radio.mp3";
 const LOGO_URL = "/assets/uploads/cc-ok-1-1.jpg";
+const WHATSAPP_URL = "/assets/uploads/whatsapp-2-1.png";
 
 const formatTime = (s: number) =>
   `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
@@ -38,7 +31,6 @@ export function RadioPlayerModel1() {
   const artistName = metadata?.artist || "Radio UNSCH";
   const albumName = metadata?.album || "";
   const albumArt = metadata?.art || "";
-  const listeners = metadata?.listeners ?? 0;
   const elapsed = metadata?.elapsed ?? 0;
   const duration = metadata?.duration ?? 0;
   const remaining = metadata?.remaining ?? 0;
@@ -211,7 +203,7 @@ export function RadioPlayerModel1() {
           {/* Station name */}
           <div className="text-center">
             <p
-              className="text-xs font-semibold tracking-[0.2em] uppercase"
+              className="text-lg font-semibold tracking-[0.2em] uppercase"
               style={{ color: "#4a4a4a", fontFamily: "'Figtree', sans-serif" }}
             >
               Radio UNSCH
@@ -330,15 +322,38 @@ export function RadioPlayerModel1() {
             </p>
           )}
 
-          {listeners > 0 && (
-            <div
-              className="flex items-center gap-1.5 text-xs"
-              style={{ color: "#333" }}
+          {/* Volume — above play button */}
+          <div className="w-full flex items-center gap-2">
+            <button
+              type="button"
+              onClick={toggleMute}
+              className="shrink-0"
+              style={{ color: "#444" }}
+              aria-label={isMuted ? "Activar" : "Silenciar"}
             >
-              <Users className="w-3 h-3" />
-              <span>{listeners.toLocaleString("es-PE")} oyentes</span>
-            </div>
-          )}
+              {isMuted || volume === 0 ? (
+                <VolumeX className="w-3.5 h-3.5" />
+              ) : (
+                <Volume2 className="w-3.5 h-3.5" />
+              )}
+            </button>
+            <Slider
+              data-ocid="m1.input"
+              min={0}
+              max={100}
+              step={1}
+              value={[isMuted ? 0 : volume]}
+              onValueChange={handleVolumeChange}
+              className="flex-1"
+              aria-label="Volumen"
+            />
+            <span
+              className="text-[10px] w-7 text-right"
+              style={{ color: "#444" }}
+            >
+              {isMuted ? 0 : volume}%
+            </span>
+          </div>
 
           {/* Play button */}
           <motion.button
@@ -361,41 +376,23 @@ export function RadioPlayerModel1() {
             )}
           </motion.button>
 
-          {/* Volume */}
-          <div className="w-full flex items-center gap-3">
-            <button
-              type="button"
-              onClick={toggleMute}
-              className="shrink-0"
-              style={{ color: "#444" }}
-              aria-label={isMuted ? "Activar" : "Silenciar"}
-            >
-              {isMuted || volume === 0 ? (
-                <VolumeX className="w-4 h-4" />
-              ) : (
-                <Volume2 className="w-4 h-4" />
-              )}
-            </button>
-            <Slider
-              data-ocid="m1.input"
-              min={0}
-              max={100}
-              step={1}
-              value={[isMuted ? 0 : volume]}
-              onValueChange={handleVolumeChange}
-              className="flex-1"
-              aria-label="Volumen"
-            />
-            <span className="text-xs w-8 text-right" style={{ color: "#444" }}>
-              {isMuted ? 0 : volume}%
-            </span>
-          </div>
-
           {metaLoading && (
             <p className="text-xs" style={{ color: "#333" }}>
               Actualizando...
             </p>
           )}
+
+          {/* WhatsApp contact — bottom left */}
+          <div className="w-full flex items-center gap-2 mt-2">
+            <img
+              src={WHATSAPP_URL}
+              alt="WhatsApp"
+              className="w-8 h-8 rounded-lg object-cover bg-white"
+            />
+            <span className="text-sm" style={{ color: "#005f6b" }}>
+              939 935 295
+            </span>
+          </div>
         </div>
       </motion.div>
     </div>

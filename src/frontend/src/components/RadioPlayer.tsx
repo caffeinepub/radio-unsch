@@ -169,7 +169,6 @@ export function RadioPlayer() {
     }
   };
 
-  const listeners = metadata?.listeners ? Number(metadata.listeners) : null;
   const songTitle =
     metadata?.title ||
     (isPlaying ? "Cargando información..." : "Presiona play para escuchar");
@@ -280,9 +279,6 @@ export function RadioPlayer() {
             >
               Radio UNSCH
             </h1>
-            <p className="text-xs mt-1" style={{ color: "oklch(40 0.04 200)" }}>
-              Universidad Nacional de San Cristóbal de Huamanga
-            </p>
           </div>
 
           {/* Equalizer */}
@@ -390,17 +386,6 @@ export function RadioPlayer() {
               )}
             </AnimatePresence>
           </div>
-
-          {/* Listeners */}
-          {listeners !== null && listeners > 0 && (
-            <div
-              className="flex items-center gap-1.5 text-xs"
-              style={{ color: "oklch(38 0.04 200)" }}
-            >
-              <Users className="w-3.5 h-3.5" />
-              <span>{listeners.toLocaleString("es-PE")} oyentes</span>
-            </div>
-          )}
 
           {/* Play / Pause */}
           <motion.button
