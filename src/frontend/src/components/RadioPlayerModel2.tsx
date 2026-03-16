@@ -12,8 +12,15 @@ const EQ_BARS = ["eq-bar-1", "eq-bar-2", "eq-bar-3", "eq-bar-4", "eq-bar-5"];
 const formatTime = (s: number) =>
   `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
+const SILENT_AUDIO_SRC =
+  "data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjIwLjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAACAAABIADAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMD///////////////////////////////////////////8AAAAATGF2YzU4LjM1AAAAAAAAAAAAAAAAJAAAAAAAAAAAASDs90hvAAAAAAAAAAAAAAAAAAAA//tQxAADB8ABSmAAQAAANIAAAARMQU1FMy45OC4yAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+
 export function RadioPlayerModel2() {
   const audioRef = useRef<HTMLAudioElement>(null);
+  const silentAudioRef = useRef<HTMLAudioElement>(null);
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(80);
   const [isMuted, setIsMuted] = useState(false);
@@ -25,6 +32,7 @@ export function RadioPlayerModel2() {
   const rotationRef = useRef(0);
   const animFrameRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number | null>(null);
+  const isPlayingRef = useRef(false);
 
   const { data: metadata, isLoading: metaLoading } = useRadioMetadata();
 
@@ -38,6 +46,95 @@ export function RadioPlayerModel2() {
   const nextTitle = metadata?.nextTitle || "";
   const nextArtist = metadata?.nextArtist || "";
 
+  useEffect(() => {
+    isPlayingRef.current = isPlaying;
+  }, [isPlaying]);
+
+  // ─── Wake Lock — auto re-acquire on release ───────────────────────────────
+  const acquireWakeLock = useCallback(async () => {
+    if (!("wakeLock" in navigator)) return;
+    try {
+      const nav = navigator as Navigator & {
+        wakeLock: { request: (type: string) => Promise<WakeLockSentinel> };
+      };
+      const wl = await nav.wakeLock.request("screen");
+      wakeLockRef.current = wl;
+      wl.addEventListener("release", () => {
+        wakeLockRef.current = null;
+        const reacquire = async () => {
+          if (!isPlayingRef.current) return;
+          document.removeEventListener("visibilitychange", reacquire);
+          if (document.visibilityState === "visible") {
+            try {
+              const newWl = await nav.wakeLock.request("screen");
+              wakeLockRef.current = newWl;
+            } catch {
+              // ignore
+            }
+          }
+        };
+        if (document.visibilityState === "visible") {
+          if (isPlayingRef.current) {
+            nav.wakeLock
+              .request("screen")
+              .then((newWl) => {
+                wakeLockRef.current = newWl;
+              })
+              .catch(() => {});
+          }
+        } else {
+          document.addEventListener("visibilitychange", reacquire);
+        }
+      });
+    } catch {
+      // not supported
+    }
+  }, []);
+
+  const releaseWakeLock = useCallback(async () => {
+    if (wakeLockRef.current) {
+      await wakeLockRef.current.release().catch(() => {});
+      wakeLockRef.current = null;
+    }
+  }, []);
+
+  // ─── Auto-reconnect ───────────────────────────────────────────────────────
+  const scheduleReconnect = useCallback(() => {
+    if (reconnectTimerRef.current) return;
+    setStatus("loading");
+    setErrorMsg("Reconectando...");
+    reconnectTimerRef.current = setTimeout(async () => {
+      reconnectTimerRef.current = null;
+      const audio = audioRef.current;
+      if (!audio || !isPlayingRef.current) return;
+      audio.src = STREAM_URL;
+      audio.load();
+      try {
+        await audio.play();
+        setStatus("playing");
+        setErrorMsg("");
+      } catch {
+        // retry on next stall
+      }
+    }, 3000);
+  }, []);
+
+  // ─── Visibility change: resume audio on unlock ────────────────────────────
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        const audio = audioRef.current;
+        if (isPlayingRef.current && audio && audio.paused) {
+          audio.play().catch(() => scheduleReconnect());
+        }
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () =>
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [scheduleReconnect]);
+
+  // ─── Vinyl rotation ───────────────────────────────────────────────────────
   useEffect(() => {
     if (isPlaying) {
       const animate = (timestamp: number) => {
@@ -64,6 +161,7 @@ export function RadioPlayerModel2() {
     };
   }, [isPlaying]);
 
+  // ─── Media Session ────────────────────────────────────────────────────────
   const setupMediaSession = useCallback(() => {
     if (!("mediaSession" in navigator)) return;
     navigator.mediaSession.metadata = new MediaMetadata({
@@ -76,36 +174,84 @@ export function RadioPlayerModel2() {
           sizes: "300x300",
           type: "image/jpeg",
         },
+        {
+          src: albumArt || window.location.origin + LOGO_URL,
+          sizes: "512x512",
+          type: "image/jpeg",
+        },
       ],
     });
     navigator.mediaSession.setActionHandler("play", () => {
-      audioRef.current?.play();
-      setIsPlaying(true);
+      audioRef.current
+        ?.play()
+        .then(() => {
+          setIsPlaying(true);
+          setStatus("playing");
+          navigator.mediaSession.playbackState = "playing";
+        })
+        .catch(() => {});
     });
     navigator.mediaSession.setActionHandler("pause", () => {
       audioRef.current?.pause();
       setIsPlaying(false);
+      setStatus("idle");
+      navigator.mediaSession.playbackState = "paused";
     });
+    navigator.mediaSession.setActionHandler("stop", () => {
+      audioRef.current?.pause();
+      setIsPlaying(false);
+      setStatus("idle");
+      navigator.mediaSession.playbackState = "none";
+    });
+    for (const action of [
+      "seekbackward",
+      "seekforward",
+      "previoustrack",
+      "nexttrack",
+    ] as MediaSessionAction[]) {
+      try {
+        navigator.mediaSession.setActionHandler(action, null);
+      } catch {}
+    }
+    navigator.mediaSession.playbackState = "playing";
   }, [songTitle, artistName, albumName, albumArt]);
 
   useEffect(() => {
     if (isPlaying) setupMediaSession();
   }, [isPlaying, setupMediaSession]);
 
+  // ─── Play / Pause ─────────────────────────────────────────────────────────
   const handleTogglePlay = async () => {
     const audio = audioRef.current;
+    const silentAudio = silentAudioRef.current;
     if (!audio) return;
+
     if (isPlaying) {
       audio.pause();
+      if (reconnectTimerRef.current) {
+        clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = null;
+      }
+      if (silentAudio) silentAudio.pause();
+      await releaseWakeLock();
       setIsPlaying(false);
       setStatus("idle");
+      if ("mediaSession" in navigator)
+        navigator.mediaSession.playbackState = "paused";
     } else {
       setStatus("loading");
       setErrorMsg("");
       try {
         audio.src = STREAM_URL;
         audio.load();
+        audio.volume = volume / 100;
         await audio.play();
+        if (silentAudio) {
+          silentAudio.volume = 0.001;
+          silentAudio.loop = true;
+          silentAudio.play().catch(() => {});
+        }
+        await acquireWakeLock();
         setIsPlaying(true);
         setStatus("playing");
       } catch {
@@ -140,7 +286,6 @@ export function RadioPlayerModel2() {
       className="min-h-screen flex flex-col items-center justify-center px-4 py-8 relative overflow-hidden"
       style={{ background: "#050a0a" }}
     >
-      {/* Radial teal glow background */}
       <div
         className="fixed inset-0 -z-10 pointer-events-none"
         style={{
@@ -152,28 +297,40 @@ export function RadioPlayerModel2() {
       {/* biome-ignore lint/a11y/useMediaCaption: streaming radio */}
       <audio
         ref={audioRef}
-        className="media-session-audio"
         preload="none"
+        playsInline
+        x-webkit-airplay="allow"
         onError={() => {
-          if (isPlaying) {
-            setStatus("error");
-            setErrorMsg("Conexión interrumpida.");
-            setIsPlaying(false);
-          }
+          if (isPlayingRef.current) scheduleReconnect();
+        }}
+        onStalled={() => {
+          if (isPlayingRef.current) scheduleReconnect();
+        }}
+        onEnded={() => {
+          if (isPlayingRef.current) scheduleReconnect();
         }}
         onPlay={() => setStatus("playing")}
         onWaiting={() => setStatus("loading")}
         onCanPlay={() => {
-          if (isPlaying) setStatus("playing");
+          if (isPlayingRef.current) setStatus("playing");
         }}
       />
 
-      {/* Official logo — fixed bottom left, flush to edge */}
+      {/* biome-ignore lint/a11y/useMediaCaption: silent keep-alive */}
+      <audio
+        ref={silentAudioRef}
+        src={SILENT_AUDIO_SRC}
+        preload="auto"
+        playsInline
+        loop
+      />
+
+      {/* Official logo — fixed bottom left */}
       <div className="fixed bottom-4 left-0 z-50">
         <img
           src={OFFICIAL_URL}
           alt="Official"
-          className="h-14 w-auto object-contain"
+          className="h-9 w-auto object-contain"
           style={{ display: "block" }}
         />
       </div>
@@ -184,7 +341,6 @@ export function RadioPlayerModel2() {
         transition={{ duration: 0.7, ease: "easeOut" }}
         className="w-full max-w-md"
       >
-        {/* Frosted glass card */}
         <div
           className="relative rounded-3xl p-8 flex flex-col items-center gap-6"
           style={{
@@ -213,7 +369,7 @@ export function RadioPlayerModel2() {
             </span>
           </div>
 
-          {/* Album art with pulsing glow ring */}
+          {/* Album art */}
           <div className="relative mt-6">
             {isPlaying && (
               <div
@@ -278,7 +434,7 @@ export function RadioPlayerModel2() {
             )}
           </AnimatePresence>
 
-          {/* Inner glass metadata panel */}
+          {/* Metadata panel */}
           <div
             data-ocid="m2.panel"
             className="w-full"
@@ -305,7 +461,9 @@ export function RadioPlayerModel2() {
                     className="w-4 h-4 animate-pulse"
                     style={{ color: "#005f6b" }}
                   />
-                  <span className="text-sm">Conectando al stream...</span>
+                  <span className="text-sm">
+                    {errorMsg || "Conectando al stream..."}
+                  </span>
                 </motion.div>
               ) : status === "error" ? (
                 <motion.div
@@ -329,8 +487,8 @@ export function RadioPlayerModel2() {
                   className="flex flex-col gap-2"
                 >
                   <p
-                    className="text-xl font-bold leading-tight"
-                    style={{ color: "rgba(255,255,255,0.9)" }}
+                    className="text-lg font-bold leading-tight"
+                    style={{ color: "#4a9da8" }}
                   >
                     {metaLoading && !isPlaying
                       ? "En vivo - Radio UNSCH"
@@ -342,16 +500,16 @@ export function RadioPlayerModel2() {
                       style={{ color: "#005f6b" }}
                     />
                     <p
-                      className="text-sm"
-                      style={{ color: "rgba(255,255,255,0.5)" }}
+                      className="text-xs"
+                      style={{ color: "rgba(74,157,168,0.7)" }}
                     >
                       {artistName}
                     </p>
                   </div>
                   {albumName && (
                     <p
-                      className="text-xs"
-                      style={{ color: "rgba(0,200,220,0.4)" }}
+                      className="text-[10px]"
+                      style={{ color: "rgba(74,157,168,0.45)" }}
                     >
                       {albumName}
                     </p>
@@ -360,7 +518,6 @@ export function RadioPlayerModel2() {
               )}
             </AnimatePresence>
 
-            {/* Progress bar */}
             {duration > 0 && (
               <div className="mt-3 flex flex-col gap-1">
                 <div
@@ -380,13 +537,13 @@ export function RadioPlayerModel2() {
                 <div className="flex justify-between">
                   <span
                     className="text-[10px]"
-                    style={{ color: "rgba(0,200,220,0.5)" }}
+                    style={{ color: "rgba(74,157,168,0.55)" }}
                   >
                     {formatTime(elapsed)}
                   </span>
                   <span
                     className="text-[10px]"
-                    style={{ color: "rgba(0,200,220,0.5)" }}
+                    style={{ color: "rgba(74,157,168,0.55)" }}
                   >
                     -{formatTime(remaining)}
                   </span>
@@ -394,14 +551,13 @@ export function RadioPlayerModel2() {
               </div>
             )}
 
-            {/* A continuación */}
             {nextTitle && (
               <p
                 className="text-[10px] mt-2"
                 style={{ color: "rgba(0,95,107,0.6)" }}
               >
                 A continuación:{" "}
-                <span style={{ color: "rgba(0,200,220,0.5)" }}>
+                <span style={{ color: "rgba(74,157,168,0.55)" }}>
                   {nextArtist && `${nextArtist} — `}
                   {nextTitle}
                 </span>
@@ -409,7 +565,7 @@ export function RadioPlayerModel2() {
             )}
           </div>
 
-          {/* Volume — above play button */}
+          {/* Volume */}
           <div className="w-full flex items-center gap-2">
             <button
               type="button"
@@ -442,7 +598,7 @@ export function RadioPlayerModel2() {
             </span>
           </div>
 
-          {/* Outlined play button with teal glow */}
+          {/* Play button */}
           <motion.button
             type="button"
             data-ocid="m2.toggle"
