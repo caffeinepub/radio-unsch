@@ -125,7 +125,7 @@
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
 }
-.live-dot { animation: live-blink 1.2s ease-in-out infinite; }
+.live-dot-active { animation: live-blink 1.2s ease-in-out infinite; }
 
 audio.media-session-audio {
   position: absolute;
@@ -135,4 +135,13 @@ audio.media-session-audio {
   clip: rect(0 0 0 0);
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+@keyframes blink-green {
+  0%, 100% { opacity: 1; color: #00cc44; }
+  50% { opacity: 0.15; color: #00cc44; }
+}
+.en-vivo-blink {
+  animation: blink-green 0.9s ease-in-out infinite;
+  color: #00cc44 !important;
 }

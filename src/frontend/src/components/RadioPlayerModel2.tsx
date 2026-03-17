@@ -1,4 +1,3 @@
-import { Slider } from "@/components/ui/slider";
 import { Music, Pause, Play, Radio, Volume2, VolumeX } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -18,8 +17,9 @@ const SILENT_AUDIO_SRC =
 export function RadioPlayerModel2() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const silentAudioRef = useRef<HTMLAudioElement>(null);
-  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const oscillatorRef = useRef<OscillatorNode | null>(null);
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(80);
@@ -50,52 +50,38 @@ export function RadioPlayerModel2() {
     isPlayingRef.current = isPlaying;
   }, [isPlaying]);
 
-  // ─── Wake Lock — auto re-acquire on release ───────────────────────────────
-  const acquireWakeLock = useCallback(async () => {
-    if (!("wakeLock" in navigator)) return;
+  // ─── AudioContext keepalive ───────────────────────────────────────────────
+  const startAudioContextKeepalive = useCallback(() => {
     try {
-      const nav = navigator as Navigator & {
-        wakeLock: { request: (type: string) => Promise<WakeLockSentinel> };
-      };
-      const wl = await nav.wakeLock.request("screen");
-      wakeLockRef.current = wl;
-      wl.addEventListener("release", () => {
-        wakeLockRef.current = null;
-        const reacquire = async () => {
-          if (!isPlayingRef.current) return;
-          document.removeEventListener("visibilitychange", reacquire);
-          if (document.visibilityState === "visible") {
-            try {
-              const newWl = await nav.wakeLock.request("screen");
-              wakeLockRef.current = newWl;
-            } catch {
-              // ignore
-            }
-          }
-        };
-        if (document.visibilityState === "visible") {
-          if (isPlayingRef.current) {
-            nav.wakeLock
-              .request("screen")
-              .then((newWl) => {
-                wakeLockRef.current = newWl;
-              })
-              .catch(() => {});
-          }
-        } else {
-          document.addEventListener("visibilitychange", reacquire);
-        }
-      });
-    } catch {
-      // not supported
-    }
+      if (audioContextRef.current) return;
+      const ctx = new (
+        window.AudioContext || (window as any).webkitAudioContext
+      )();
+      audioContextRef.current = ctx;
+      const gainNode = ctx.createGain();
+      gainNode.gain.value = 0;
+      gainNode.connect(ctx.destination);
+      const osc = ctx.createOscillator();
+      osc.type = "sine";
+      osc.frequency.value = 1;
+      osc.connect(gainNode);
+      osc.start();
+      oscillatorRef.current = osc;
+    } catch {}
   }, []);
 
-  const releaseWakeLock = useCallback(async () => {
-    if (wakeLockRef.current) {
-      await wakeLockRef.current.release().catch(() => {});
-      wakeLockRef.current = null;
-    }
+  const stopAudioContextKeepalive = useCallback(() => {
+    try {
+      if (oscillatorRef.current) {
+        oscillatorRef.current.stop();
+        oscillatorRef.current.disconnect();
+        oscillatorRef.current = null;
+      }
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+        audioContextRef.current = null;
+      }
+    } catch {}
   }, []);
 
   // ─── Auto-reconnect ───────────────────────────────────────────────────────
@@ -119,7 +105,28 @@ export function RadioPlayerModel2() {
     }, 3000);
   }, []);
 
-  // ─── Visibility change: resume audio on unlock ────────────────────────────
+  // ─── Periodic check: ensure audio keeps playing ───────────────────────────
+  useEffect(() => {
+    if (!isPlaying) return;
+    const intervalId = setInterval(() => {
+      // Resume AudioContext if suspended (e.g. screen turned off)
+      const ctx = audioContextRef.current;
+      if (ctx && ctx.state === "suspended") {
+        ctx.resume().catch(() => {});
+      }
+      // Reconnect if audio stopped unexpectedly
+      if (audioRef.current?.paused && isPlayingRef.current) {
+        scheduleReconnect();
+      }
+      // Keep Media Session state as playing so OS doesn't think playback stopped
+      if (isPlayingRef.current && "mediaSession" in navigator) {
+        navigator.mediaSession.playbackState = "playing";
+      }
+    }, 5000);
+    return () => clearInterval(intervalId);
+  }, [isPlaying, scheduleReconnect]);
+
+  // ─── Visibility change: resume audio on unlock / screen-off ──────────────
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
@@ -127,11 +134,37 @@ export function RadioPlayerModel2() {
         if (isPlayingRef.current && audio && audio.paused) {
           audio.play().catch(() => scheduleReconnect());
         }
+        // Resume AudioContext when coming back to foreground
+        const ctx = audioContextRef.current;
+        if (ctx && ctx.state === "suspended") {
+          ctx.resume().catch(() => {});
+        }
+      } else {
+        // Screen locking — keep audio alive
+        const audio = audioRef.current;
+        if (isPlayingRef.current && audio && audio.paused) {
+          audio.play().catch(() => {});
+        }
+        const ctx = audioContextRef.current;
+        if (isPlayingRef.current && ctx && ctx.state === "suspended") {
+          ctx.resume().catch(() => {});
+        }
       }
     };
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () =>
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [scheduleReconnect]);
+
+  // ─── pageshow: resume audio when returning from lock screen ──────────────
+  useEffect(() => {
+    const handlePageShow = () => {
+      if (isPlayingRef.current && audioRef.current?.paused) {
+        audioRef.current.play().catch(() => scheduleReconnect());
+      }
+    };
+    window.addEventListener("pageshow", handlePageShow);
+    return () => window.removeEventListener("pageshow", handlePageShow);
   }, [scheduleReconnect]);
 
   // ─── Vinyl rotation ───────────────────────────────────────────────────────
@@ -233,7 +266,7 @@ export function RadioPlayerModel2() {
         reconnectTimerRef.current = null;
       }
       if (silentAudio) silentAudio.pause();
-      await releaseWakeLock();
+      stopAudioContextKeepalive();
       setIsPlaying(false);
       setStatus("idle");
       if ("mediaSession" in navigator)
@@ -246,12 +279,12 @@ export function RadioPlayerModel2() {
         audio.load();
         audio.volume = volume / 100;
         await audio.play();
+        startAudioContextKeepalive();
         if (silentAudio) {
           silentAudio.volume = 0.001;
           silentAudio.loop = true;
           silentAudio.play().catch(() => {});
         }
-        await acquireWakeLock();
         setIsPlaying(true);
         setStatus("playing");
       } catch {
@@ -281,6 +314,8 @@ export function RadioPlayerModel2() {
     }
   };
 
+  const currentVolume = isMuted ? 0 : volume;
+
   return (
     <div
       className="min-h-screen flex flex-col items-center justify-center px-4 py-8 relative overflow-hidden"
@@ -308,6 +343,15 @@ export function RadioPlayerModel2() {
         }}
         onEnded={() => {
           if (isPlayingRef.current) scheduleReconnect();
+        }}
+        onPause={() => {
+          if (isPlayingRef.current) {
+            setTimeout(() => {
+              if (isPlayingRef.current && audioRef.current?.paused) {
+                audioRef.current.play().catch(() => scheduleReconnect());
+              }
+            }, 300);
+          }
         }}
         onPlay={() => setStatus("playing")}
         onWaiting={() => setStatus("loading")}
@@ -346,7 +390,6 @@ export function RadioPlayerModel2() {
           style={{
             background: "rgba(0,20,22,0.55)",
             backdropFilter: "blur(32px) saturate(180%)",
-            border: "1px solid rgba(0,95,107,0.5)",
             boxShadow:
               "0 8px 80px rgba(0,95,107,0.2), inset 0 1px 0 rgba(0,200,220,0.08)",
           }}
@@ -354,15 +397,15 @@ export function RadioPlayerModel2() {
           {/* EN VIVO badge */}
           <div className="absolute top-5 right-5 flex items-center gap-1.5">
             <span
-              className="live-dot w-2 h-2 rounded-full"
-              style={{ background: isPlaying ? "#ff2222" : "#005f6b" }}
+              className={`live-dot w-2 h-2 rounded-full${isPlaying ? " live-dot-active" : ""}`}
+              style={{ background: isPlaying ? "#00cc44" : "#005f6b" }}
             />
             <span
-              className="text-[10px] font-bold tracking-[0.18em] uppercase px-2 py-0.5 rounded-full"
+              className={`${isPlaying ? "en-vivo-blink" : ""} text-[10px] font-bold tracking-[0.18em] uppercase px-2 py-0.5 rounded-full`}
               style={{
-                color: isPlaying ? "#ff2222" : "#00c8dc",
                 background: "rgba(0,95,107,0.25)",
                 border: "1px solid rgba(0,95,107,0.5)",
+                color: isPlaying ? undefined : "rgba(0,200,180,0.6)",
               }}
             >
               EN VIVO
@@ -406,7 +449,7 @@ export function RadioPlayerModel2() {
             <p
               className="text-lg font-semibold tracking-[0.2em] uppercase"
               style={{
-                color: "#555555",
+                color: "#aaaaaa",
                 fontFamily: "'Playfair Display', serif",
               }}
             >
@@ -488,7 +531,7 @@ export function RadioPlayerModel2() {
                 >
                   <p
                     className="text-lg font-bold leading-tight"
-                    style={{ color: "#4a9da8" }}
+                    style={{ color: "rgba(74,157,168,0.28)" }}
                   >
                     {metaLoading && !isPlaying
                       ? "En vivo - Radio UNSCH"
@@ -501,7 +544,7 @@ export function RadioPlayerModel2() {
                     />
                     <p
                       className="text-xs"
-                      style={{ color: "rgba(74,157,168,0.7)" }}
+                      style={{ color: "rgba(74,157,168,0.4)" }}
                     >
                       {artistName}
                     </p>
@@ -509,7 +552,7 @@ export function RadioPlayerModel2() {
                   {albumName && (
                     <p
                       className="text-[10px]"
-                      style={{ color: "rgba(74,157,168,0.45)" }}
+                      style={{ color: "rgba(74,157,168,0.28)" }}
                     >
                       {albumName}
                     </p>
@@ -537,13 +580,13 @@ export function RadioPlayerModel2() {
                 <div className="flex justify-between">
                   <span
                     className="text-[10px]"
-                    style={{ color: "rgba(74,157,168,0.55)" }}
+                    style={{ color: "rgba(74,157,168,0.32)" }}
                   >
                     {formatTime(elapsed)}
                   </span>
                   <span
                     className="text-[10px]"
-                    style={{ color: "rgba(74,157,168,0.55)" }}
+                    style={{ color: "rgba(74,157,168,0.32)" }}
                   >
                     -{formatTime(remaining)}
                   </span>
@@ -557,7 +600,7 @@ export function RadioPlayerModel2() {
                 style={{ color: "rgba(0,95,107,0.6)" }}
               >
                 A continuación:{" "}
-                <span style={{ color: "rgba(74,157,168,0.55)" }}>
+                <span style={{ color: "rgba(74,157,168,0.32)" }}>
                   {nextArtist && `${nextArtist} — `}
                   {nextTitle}
                 </span>
@@ -580,21 +623,27 @@ export function RadioPlayerModel2() {
                 <Volume2 className="w-3.5 h-3.5" />
               )}
             </button>
-            <Slider
+            <input
               data-ocid="m2.input"
+              type="range"
               min={0}
               max={100}
               step={1}
-              value={[isMuted ? 0 : volume]}
-              onValueChange={handleVolumeChange}
-              className="flex-1"
+              value={currentVolume}
+              onChange={(e) => handleVolumeChange([Number(e.target.value)])}
+              style={
+                {
+                  "--val": `${currentVolume}%`,
+                } as React.CSSProperties
+              }
+              className="custom-volume-slider flex-1"
               aria-label="Volumen"
             />
             <span
               className="text-[10px] w-7 text-right"
               style={{ color: "rgba(0,95,107,0.7)" }}
             >
-              {isMuted ? 0 : volume}%
+              {currentVolume}%
             </span>
           </div>
 
