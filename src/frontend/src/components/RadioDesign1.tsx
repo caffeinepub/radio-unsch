@@ -1,13 +1,13 @@
 /**
- * Diseño 1 — AURORA ÁRTICA
- * Fondo negro puro, halo teal profundo, glassmorphism refinado,
- * tipografía elegante, botón de play en anillo doble.
+ * Diseño 1 — CARMESÍ
+ * Fondo negro rojizo, acentos carmesí profundo, glassmorphism con halo rojo,
+ * vinilo circular con glow rojo, EQ en degradado rojo.
  */
 import { Music, Pause, Play, Radio, Volume2, VolumeX } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { formatTime, useRadioPlayer } from "../hooks/useRadioPlayer";
 
-function EQ({ isPlaying }: { isPlaying: boolean }) {
+function EQCrimson({ isPlaying }: { isPlaying: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number | null>(null);
   const barsRef = useRef(
@@ -26,6 +26,7 @@ function EQ({ isPlaying }: { isPlaying: boolean }) {
       };
     }),
   );
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -36,14 +37,14 @@ function EQ({ isPlaying }: { isPlaying: boolean }) {
     const bars = barsRef.current;
     const N = bars.length;
     const barW = Math.floor((W - (N - 1) * 2) / N);
+
     const draw = () => {
       ctx.clearRect(0, 0, W, H);
       if (!isPlaying) {
         for (let i = 0; i < N; i++) {
-          const x = i * (barW + 2);
-          ctx.fillStyle = "rgba(0,95,107,0.25)";
+          ctx.fillStyle = "rgba(139,0,0,0.25)";
           ctx.beginPath();
-          ctx.roundRect(x, H - 3, barW, 3, 2);
+          ctx.roundRect(i * (barW + 2), H - 3, barW, 3, 2);
           ctx.fill();
         }
         return;
@@ -74,15 +75,15 @@ function EQ({ isPlaying }: { isPlaying: boolean }) {
         const barHeight = Math.max(3, Math.round(bar.current * (H - 4)));
         const peakY = Math.max(0, H - Math.round(bar.peak * (H - 4)) - 3);
         const grad = ctx.createLinearGradient(0, H - barHeight, 0, H);
-        grad.addColorStop(0, "#7dd3de");
-        grad.addColorStop(0.5, "#2a9aaa");
-        grad.addColorStop(1, "#005f6b");
+        grad.addColorStop(0, "#ff6b6b");
+        grad.addColorStop(0.5, "#c53030");
+        grad.addColorStop(1, "#7b0000");
         ctx.fillStyle = grad;
         ctx.beginPath();
         ctx.roundRect(x, H - barHeight, barW, barHeight, [2, 2, 0, 0]);
         ctx.fill();
         if (bar.peak > 0.06) {
-          ctx.fillStyle = "rgba(125,211,222,0.75)";
+          ctx.fillStyle = "rgba(255,107,107,0.75)";
           ctx.beginPath();
           ctx.roundRect(x, peakY, barW, 2, 1);
           ctx.fill();
@@ -95,6 +96,7 @@ function EQ({ isPlaying }: { isPlaying: boolean }) {
       if (animRef.current) cancelAnimationFrame(animRef.current);
     };
   }, [isPlaying]);
+
   return (
     <canvas
       ref={canvasRef}
@@ -112,6 +114,7 @@ export function RadioDesign1() {
     const id = requestAnimationFrame(() => setCardVisible(true));
     return () => cancelAnimationFrame(id);
   }, []);
+
   const {
     isPlaying,
     status,
@@ -143,20 +146,21 @@ export function RadioDesign1() {
   return (
     <div
       className="min-h-screen flex flex-col items-center justify-center px-4 py-8 relative overflow-hidden"
-      style={{ background: "#010d0e" }}
+      style={{ background: "#0c0000" }}
     >
+      {/* Crimson background glows */}
       <div
         className="fixed inset-0 -z-10 pointer-events-none"
         style={{
           background:
-            "radial-gradient(ellipse 80% 70% at 50% 40%, rgba(0,120,130,0.18) 0%, rgba(0,80,90,0.06) 50%, transparent 80%)",
+            "radial-gradient(ellipse 80% 70% at 50% 40%, rgba(139,0,0,0.22) 0%, rgba(100,0,0,0.08) 55%, transparent 80%)",
         }}
       />
       <div
         className="fixed inset-0 -z-10 pointer-events-none"
         style={{
           background:
-            "radial-gradient(ellipse 40% 30% at 50% 0%, rgba(0,180,200,0.08) 0%, transparent 70%)",
+            "radial-gradient(ellipse 40% 30% at 50% 0%, rgba(180,0,0,0.1) 0%, transparent 70%)",
         }}
       />
 
@@ -188,18 +192,21 @@ export function RadioDesign1() {
       />
 
       <div
-        className={`w-full max-w-sm transition-all duration-700 ${cardVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
+        className={`w-full max-w-sm transition-all duration-700 ${
+          cardVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+        }`}
       >
         <div
           className="relative rounded-3xl p-7 flex flex-col items-center gap-5"
           style={{
-            background: "rgba(0,18,20,0.6)",
+            background: "rgba(20,2,2,0.7)",
             backdropFilter: "blur(40px) saturate(180%)",
             boxShadow:
-              "0 0 80px rgba(0,120,140,0.12), 0 2px 0 rgba(0,200,220,0.06) inset, 0 -1px 0 rgba(0,100,120,0.06) inset",
-            border: "1px solid rgba(0,150,170,0.1)",
+              "0 0 80px rgba(200,30,30,0.12), 0 2px 0 rgba(229,62,62,0.06) inset, 0 -1px 0 rgba(139,0,0,0.06) inset",
+            border: "1px solid rgba(200,30,30,0.15)",
           }}
         >
+          {/* EN VIVO */}
           <div className="absolute top-4 right-4 flex items-center gap-1.5">
             <span
               className={`w-2 h-2 rounded-full transition-all${isPlaying ? " live-dot-red-blink" : ""}`}
@@ -213,12 +220,13 @@ export function RadioDesign1() {
             </span>
           </div>
 
+          {/* Vinyl — circular */}
           <div className="relative mt-4">
             {isPlaying && (
               <div
                 className="pulse-ring absolute inset-0 rounded-full"
                 style={{
-                  border: "1.5px solid rgba(0,150,170,0.4)",
+                  border: "1.5px solid rgba(229,62,62,0.4)",
                   margin: "-10px",
                 }}
               />
@@ -227,8 +235,8 @@ export function RadioDesign1() {
               className={`w-40 h-40 rounded-full overflow-hidden ${isPlaying ? "vinyl-spinning" : ""}`}
               style={{
                 boxShadow: isPlaying
-                  ? "0 0 0 3px rgba(0,140,160,0.5), 0 0 50px rgba(0,120,140,0.3)"
-                  : "0 0 0 2px rgba(0,80,90,0.2)",
+                  ? "0 0 0 3px rgba(197,48,48,0.55), 0 0 50px rgba(139,0,0,0.35)"
+                  : "0 0 0 2px rgba(100,0,0,0.2)",
               }}
             >
               <img
@@ -243,62 +251,65 @@ export function RadioDesign1() {
             </div>
           </div>
 
+          {/* Station label */}
           <p
             className="text-base font-semibold tracking-[0.25em] uppercase"
             style={{
               fontFamily: "'Playfair Display', serif",
-              color: "#8ecfda",
+              color: "#f87171",
             }}
           >
             Radio UNSCH
           </p>
 
+          {/* EQ */}
           <div
             style={{
               opacity: isPlaying && status === "playing" ? 1 : 0.35,
               transition: "opacity 0.4s",
             }}
           >
-            <EQ isPlaying={isPlaying && status === "playing"} />
+            <EQCrimson isPlaying={isPlaying && status === "playing"} />
           </div>
 
+          {/* Metadata panel */}
           <div
             className="w-full rounded-2xl px-4 py-3"
             style={{
-              background: "rgba(0,8,10,0.7)",
-              border: "1px solid rgba(0,120,140,0.2)",
+              background: "rgba(12,0,0,0.75)",
+              border: "1px solid rgba(197,48,48,0.18)",
             }}
           >
             {status === "loading" ? (
               <div
                 className="flex items-center gap-2 justify-center py-1"
-                style={{ color: "#3a7a85" }}
+                style={{ color: "#9b1c1c" }}
               >
                 <Radio className="w-4 h-4 animate-pulse" />
                 <span className="text-sm">{errorMsg || "Conectando..."}</span>
               </div>
             ) : status === "error" ? (
-              <p className="text-sm text-center" style={{ color: "#b05050" }}>
+              <p className="text-sm text-center" style={{ color: "#f87171" }}>
                 {errorMsg}
               </p>
             ) : (
               <div className="flex flex-col gap-1.5">
                 <p
                   className="text-sm font-semibold leading-snug"
-                  style={{ color: "#7dd3de" }}
+                  style={{ color: "#fca5a5" }}
                 >
                   {metaLoading && !isPlaying
                     ? "En vivo - Radio UNSCH"
                     : songTitle}
                 </p>
                 <div className="flex items-center gap-1.5">
-                  <Music className="w-3 h-3" style={{ color: "#2a9aaa" }} />
-                  <p className="text-xs" style={{ color: "#5aa8b8" }}>
+                  <Music className="w-3 h-3" style={{ color: "#e53e3e" }} />
+                  <p className="text-xs" style={{ color: "#f87171" }}>
                     {artistName}
                   </p>
                 </div>
                 {albumName && (
-                  <p className="text-[10px]" style={{ color: "#3a7a85" }}>
+                  <p className="text-[10px]" style={{ color: "#c0392b" }}>
                     {albumName}
                   </p>
                 )}
@@ -308,13 +319,13 @@ export function RadioDesign1() {
               <div className="mt-2">
                 <div
                   className="w-full rounded-full overflow-hidden"
-                  style={{ height: "2px", background: "rgba(0,80,95,0.2)" }}
+                  style={{ height: "2px", background: "rgba(100,0,0,0.2)" }}
                 >
                   <div
                     style={{
                       height: "100%",
                       width: `${Math.min((elapsed / duration) * 100, 100)}%`,
-                      background: "linear-gradient(90deg,#2a7a8a,#5ab8c8)",
+                      background: "linear-gradient(90deg,#8b0000,#e53e3e)",
                       borderRadius: "9999px",
                       transition: "width 1s linear",
                     }}
@@ -323,13 +334,13 @@ export function RadioDesign1() {
                 <div className="flex justify-between mt-1">
                   <span
                     className="text-[9px]"
-                    style={{ color: "rgba(90,168,184,0.5)" }}
+                    style={{ color: "rgba(229,62,62,0.5)" }}
                   >
                     {formatTime(elapsed)}
                   </span>
                   <span
                     className="text-[9px]"
-                    style={{ color: "rgba(90,168,184,0.5)" }}
+                    style={{ color: "rgba(229,62,62,0.5)" }}
                   >
                     -{formatTime(remaining)}
                   </span>
@@ -339,10 +350,10 @@ export function RadioDesign1() {
             {nextTitle && (
               <p
                 className="text-[9px] mt-1.5"
-                style={{ color: "rgba(0,120,140,0.65)" }}
+                style={{ color: "rgba(139,0,0,0.7)" }}
               >
                 A continuación:{" "}
-                <span style={{ color: "rgba(90,168,184,0.6)" }}>
+                <span style={{ color: "rgba(248,113,113,0.65)" }}>
                   {nextArtist && `${nextArtist} — `}
                   {nextTitle}
                 </span>
@@ -350,11 +361,12 @@ export function RadioDesign1() {
             )}
           </div>
 
+          {/* Volume — red gradient */}
           <div className="w-full flex items-center gap-2">
             <button
               type="button"
               onClick={toggleMute}
-              style={{ color: "#2a9aaa" }}
+              style={{ color: "#e53e3e" }}
               aria-label={isMuted ? "Activar" : "Silenciar"}
             >
               {isMuted || volume === 0 ? (
@@ -370,18 +382,30 @@ export function RadioDesign1() {
               step={1}
               value={currentVolume}
               onChange={(e) => handleVolumeChange([Number(e.target.value)])}
-              style={{ "--val": `${currentVolume}%` } as React.CSSProperties}
-              className="custom-volume-slider flex-1"
+              style={
+                {
+                  WebkitAppearance: "none",
+                  appearance: "none",
+                  height: "4px",
+                  borderRadius: "9999px",
+                  outline: "none",
+                  cursor: "pointer",
+                  flex: 1,
+                  background: `linear-gradient(to right, #8b0000, #e53e3e ${currentVolume}%, rgba(100,0,0,0.15) ${currentVolume}%, rgba(100,0,0,0.15) 100%)`,
+                } as React.CSSProperties
+              }
+              className="flex-1"
               aria-label="Volumen"
             />
             <span
               className="text-[10px] w-7 text-right"
-              style={{ color: "rgba(0,120,140,0.6)" }}
+              style={{ color: "rgba(229,62,62,0.6)" }}
             >
               {currentVolume}%
             </span>
           </div>
 
+          {/* Play button */}
           <button
             type="button"
             onClick={handleTogglePlay}
@@ -390,13 +414,13 @@ export function RadioDesign1() {
             className="play-btn w-20 h-20 rounded-full flex items-center justify-center disabled:opacity-50"
             style={{
               background: isPlaying
-                ? "rgba(0,120,140,0.15)"
-                : "rgba(0,80,100,0.1)",
-              border: "2px solid rgba(0,160,180,0.4)",
+                ? "rgba(139,0,0,0.2)"
+                : "rgba(100,0,0,0.12)",
+              border: "2px solid rgba(229,62,62,0.45)",
               boxShadow: isPlaying
-                ? "0 0 30px rgba(0,160,180,0.2), 0 0 0 6px rgba(0,120,140,0.08)"
-                : "0 0 16px rgba(0,120,140,0.15)",
-              color: "#7dd3de",
+                ? "0 0 30px rgba(229,62,62,0.22), 0 0 0 6px rgba(139,0,0,0.08)"
+                : "0 0 16px rgba(139,0,0,0.15)",
+              color: "#f87171",
             }}
           >
             {status === "loading" ? (

@@ -4,9 +4,9 @@ import { RadioDesign2 } from "./components/RadioDesign2";
 import { RadioDesign3 } from "./components/RadioDesign3";
 
 const designs = [
-  { id: 1, label: "Aurora", color: "#2a9aaa" },
-  { id: 2, label: "Ember", color: "#c89030" },
-  { id: 3, label: "Nebulosa", color: "#9060e0" },
+  { id: 1, label: "Carmesí", color: "#e53e3e" },
+  { id: 2, label: "Oceánico", color: "#00b4d8" },
+  { id: 3, label: "Esmeralda", color: "#00c853" },
 ];
 
 export default function App() {
