@@ -1,13 +1,13 @@
 /**
- * Diseño 1 — CARMESÍ
- * Fondo negro rojizo, acentos carmesí profundo, glassmorphism con halo rojo,
- * vinilo circular con glow rojo, EQ en degradado rojo.
+ * Diseño 1 — ÁMBAR
+ * Fondo carbon oscuro/marrón cálido, acentos ámbar/miel apagados.
+ * Estilo: jazz bar vintage, cálido y sofisticado. Sin neón.
  */
 import { Music, Pause, Play, Radio, Volume2, VolumeX } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { formatTime, useRadioPlayer } from "../hooks/useRadioPlayer";
 
-function EQCrimson({ isPlaying }: { isPlaying: boolean }) {
+function EQAmber({ isPlaying }: { isPlaying: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number | null>(null);
   const barsRef = useRef(
@@ -37,12 +37,11 @@ function EQCrimson({ isPlaying }: { isPlaying: boolean }) {
     const bars = barsRef.current;
     const N = bars.length;
     const barW = Math.floor((W - (N - 1) * 2) / N);
-
     const draw = () => {
       ctx.clearRect(0, 0, W, H);
       if (!isPlaying) {
         for (let i = 0; i < N; i++) {
-          ctx.fillStyle = "rgba(139,0,0,0.25)";
+          ctx.fillStyle = "rgba(120,80,20,0.25)";
           ctx.beginPath();
           ctx.roundRect(i * (barW + 2), H - 3, barW, 3, 2);
           ctx.fill();
@@ -75,15 +74,15 @@ function EQCrimson({ isPlaying }: { isPlaying: boolean }) {
         const barHeight = Math.max(3, Math.round(bar.current * (H - 4)));
         const peakY = Math.max(0, H - Math.round(bar.peak * (H - 4)) - 3);
         const grad = ctx.createLinearGradient(0, H - barHeight, 0, H);
-        grad.addColorStop(0, "#ff6b6b");
-        grad.addColorStop(0.5, "#c53030");
-        grad.addColorStop(1, "#7b0000");
+        grad.addColorStop(0, "#f0c060");
+        grad.addColorStop(0.5, "#b07820");
+        grad.addColorStop(1, "#5a3a08");
         ctx.fillStyle = grad;
         ctx.beginPath();
         ctx.roundRect(x, H - barHeight, barW, barHeight, [2, 2, 0, 0]);
         ctx.fill();
         if (bar.peak > 0.06) {
-          ctx.fillStyle = "rgba(255,107,107,0.75)";
+          ctx.fillStyle = "rgba(240,192,96,0.7)";
           ctx.beginPath();
           ctx.roundRect(x, peakY, barW, 2, 1);
           ctx.fill();
@@ -146,21 +145,20 @@ export function RadioDesign1() {
   return (
     <div
       className="min-h-screen flex flex-col items-center justify-center px-4 py-8 relative overflow-hidden"
-      style={{ background: "#0c0000" }}
+      style={{ background: "#100b04" }}
     >
-      {/* Crimson background glows */}
       <div
         className="fixed inset-0 -z-10 pointer-events-none"
         style={{
           background:
-            "radial-gradient(ellipse 80% 70% at 50% 40%, rgba(139,0,0,0.22) 0%, rgba(100,0,0,0.08) 55%, transparent 80%)",
+            "radial-gradient(ellipse 80% 70% at 50% 40%, rgba(120,70,10,0.28) 0%, rgba(80,40,5,0.1) 55%, transparent 80%)",
         }}
       />
       <div
         className="fixed inset-0 -z-10 pointer-events-none"
         style={{
           background:
-            "radial-gradient(ellipse 40% 30% at 50% 0%, rgba(180,0,0,0.1) 0%, transparent 70%)",
+            "radial-gradient(ellipse 40% 30% at 20% 10%, rgba(180,110,20,0.08) 0%, transparent 70%)",
         }}
       />
 
@@ -176,7 +174,7 @@ export function RadioDesign1() {
         onStalled={() => scheduleReconnect()}
         onEnded={() => scheduleReconnect()}
         onPause={() => {
-          if ((audioRef as any).current?.__isPlaying) attemptResume();
+          if ((audioRef.current as any)?.__isPlaying) attemptResume();
         }}
         onPlay={() => {}}
         onWaiting={() => {}}
@@ -199,11 +197,11 @@ export function RadioDesign1() {
         <div
           className="relative rounded-3xl p-7 flex flex-col items-center gap-5"
           style={{
-            background: "rgba(20,2,2,0.7)",
-            backdropFilter: "blur(40px) saturate(180%)",
+            background: "rgba(22,13,4,0.72)",
+            backdropFilter: "blur(40px) saturate(160%)",
             boxShadow:
-              "0 0 80px rgba(200,30,30,0.12), 0 2px 0 rgba(229,62,62,0.06) inset, 0 -1px 0 rgba(139,0,0,0.06) inset",
-            border: "1px solid rgba(200,30,30,0.15)",
+              "0 0 80px rgba(160,90,10,0.14), 0 2px 0 rgba(200,140,30,0.06) inset",
+            border: "1px solid rgba(160,100,20,0.18)",
           }}
         >
           {/* EN VIVO */}
@@ -220,13 +218,13 @@ export function RadioDesign1() {
             </span>
           </div>
 
-          {/* Vinyl — circular */}
+          {/* Vinyl */}
           <div className="relative mt-4">
             {isPlaying && (
               <div
                 className="pulse-ring absolute inset-0 rounded-full"
                 style={{
-                  border: "1.5px solid rgba(229,62,62,0.4)",
+                  border: "1.5px solid rgba(190,130,30,0.4)",
                   margin: "-10px",
                 }}
               />
@@ -235,8 +233,8 @@ export function RadioDesign1() {
               className={`w-40 h-40 rounded-full overflow-hidden ${isPlaying ? "vinyl-spinning" : ""}`}
               style={{
                 boxShadow: isPlaying
-                  ? "0 0 0 3px rgba(197,48,48,0.55), 0 0 50px rgba(139,0,0,0.35)"
-                  : "0 0 0 2px rgba(100,0,0,0.2)",
+                  ? "0 0 0 3px rgba(160,100,20,0.5), 0 0 50px rgba(120,70,10,0.35)"
+                  : "0 0 0 2px rgba(80,50,10,0.25)",
               }}
             >
               <img
@@ -251,39 +249,37 @@ export function RadioDesign1() {
             </div>
           </div>
 
-          {/* Station label */}
           <p
             className="text-base font-semibold tracking-[0.25em] uppercase"
             style={{
               fontFamily: "'Playfair Display', serif",
-              color: "#f87171",
+              color: "#d4a050",
             }}
           >
             Radio UNSCH
           </p>
 
-          {/* EQ */}
           <div
             style={{
               opacity: isPlaying && status === "playing" ? 1 : 0.35,
               transition: "opacity 0.4s",
             }}
           >
-            <EQCrimson isPlaying={isPlaying && status === "playing"} />
+            <EQAmber isPlaying={isPlaying && status === "playing"} />
           </div>
 
           {/* Metadata panel */}
           <div
             className="w-full rounded-2xl px-4 py-3"
             style={{
-              background: "rgba(12,0,0,0.75)",
-              border: "1px solid rgba(197,48,48,0.18)",
+              background: "rgba(14,8,2,0.8)",
+              border: "1px solid rgba(150,90,15,0.2)",
             }}
           >
             {status === "loading" ? (
               <div
                 className="flex items-center gap-2 justify-center py-1"
-                style={{ color: "#9b1c1c" }}
+                style={{ color: "#8a5c10" }}
               >
                 <Radio className="w-4 h-4 animate-pulse" />
                 <span className="text-sm">{errorMsg || "Conectando..."}</span>
@@ -296,20 +292,20 @@ export function RadioDesign1() {
               <div className="flex flex-col gap-1.5">
                 <p
                   className="text-sm font-semibold leading-snug"
-                  style={{ color: "#fca5a5" }}
+                  style={{ color: "#e8c070" }}
                 >
                   {metaLoading && !isPlaying
                     ? "En vivo - Radio UNSCH"
                     : songTitle}
                 </p>
                 <div className="flex items-center gap-1.5">
-                  <Music className="w-3 h-3" style={{ color: "#e53e3e" }} />
-                  <p className="text-xs" style={{ color: "#f87171" }}>
+                  <Music className="w-3 h-3" style={{ color: "#b07820" }} />
+                  <p className="text-xs" style={{ color: "#c89040" }}>
                     {artistName}
                   </p>
                 </div>
                 {albumName && (
-                  <p className="text-[10px]" style={{ color: "#c0392b" }}>
+                  <p className="text-[10px]" style={{ color: "#8a5c10" }}>
                     {albumName}
                   </p>
                 )}
@@ -319,13 +315,13 @@ export function RadioDesign1() {
               <div className="mt-2">
                 <div
                   className="w-full rounded-full overflow-hidden"
-                  style={{ height: "2px", background: "rgba(100,0,0,0.2)" }}
+                  style={{ height: "2px", background: "rgba(100,60,10,0.2)" }}
                 >
                   <div
                     style={{
                       height: "100%",
                       width: `${Math.min((elapsed / duration) * 100, 100)}%`,
-                      background: "linear-gradient(90deg,#8b0000,#e53e3e)",
+                      background: "linear-gradient(90deg,#5a3a08,#d4a050)",
                       borderRadius: "9999px",
                       transition: "width 1s linear",
                     }}
@@ -334,13 +330,13 @@ export function RadioDesign1() {
                 <div className="flex justify-between mt-1">
                   <span
                     className="text-[9px]"
-                    style={{ color: "rgba(229,62,62,0.5)" }}
+                    style={{ color: "rgba(180,120,30,0.5)" }}
                   >
                     {formatTime(elapsed)}
                   </span>
                   <span
                     className="text-[9px]"
-                    style={{ color: "rgba(229,62,62,0.5)" }}
+                    style={{ color: "rgba(180,120,30,0.5)" }}
                   >
                     -{formatTime(remaining)}
                   </span>
@@ -350,10 +346,10 @@ export function RadioDesign1() {
             {nextTitle && (
               <p
                 className="text-[9px] mt-1.5"
-                style={{ color: "rgba(139,0,0,0.7)" }}
+                style={{ color: "rgba(120,80,15,0.65)" }}
               >
                 A continuación:{" "}
-                <span style={{ color: "rgba(248,113,113,0.65)" }}>
+                <span style={{ color: "rgba(212,160,80,0.65)" }}>
                   {nextArtist && `${nextArtist} — `}
                   {nextTitle}
                 </span>
@@ -361,12 +357,12 @@ export function RadioDesign1() {
             )}
           </div>
 
-          {/* Volume — red gradient */}
+          {/* Volume */}
           <div className="w-full flex items-center gap-2">
             <button
               type="button"
               onClick={toggleMute}
-              style={{ color: "#e53e3e" }}
+              style={{ color: "#b07820" }}
               aria-label={isMuted ? "Activar" : "Silenciar"}
             >
               {isMuted || volume === 0 ? (
@@ -391,7 +387,7 @@ export function RadioDesign1() {
                   outline: "none",
                   cursor: "pointer",
                   flex: 1,
-                  background: `linear-gradient(to right, #8b0000, #e53e3e ${currentVolume}%, rgba(100,0,0,0.15) ${currentVolume}%, rgba(100,0,0,0.15) 100%)`,
+                  background: `linear-gradient(to right, #5a3a08, #d4a050 ${currentVolume}%, rgba(100,60,10,0.15) ${currentVolume}%, rgba(100,60,10,0.15) 100%)`,
                 } as React.CSSProperties
               }
               className="flex-1"
@@ -399,7 +395,7 @@ export function RadioDesign1() {
             />
             <span
               className="text-[10px] w-7 text-right"
-              style={{ color: "rgba(229,62,62,0.6)" }}
+              style={{ color: "rgba(180,120,30,0.6)" }}
             >
               {currentVolume}%
             </span>
@@ -414,13 +410,13 @@ export function RadioDesign1() {
             className="play-btn w-20 h-20 rounded-full flex items-center justify-center disabled:opacity-50"
             style={{
               background: isPlaying
-                ? "rgba(139,0,0,0.2)"
-                : "rgba(100,0,0,0.12)",
-              border: "2px solid rgba(229,62,62,0.45)",
+                ? "rgba(120,70,10,0.2)"
+                : "rgba(80,50,8,0.12)",
+              border: "2px solid rgba(190,130,30,0.45)",
               boxShadow: isPlaying
-                ? "0 0 30px rgba(229,62,62,0.22), 0 0 0 6px rgba(139,0,0,0.08)"
-                : "0 0 16px rgba(139,0,0,0.15)",
-              color: "#f87171",
+                ? "0 0 30px rgba(190,130,30,0.22), 0 0 0 6px rgba(120,70,10,0.08)"
+                : "0 0 16px rgba(120,70,10,0.15)",
+              color: "#e8c070",
             }}
           >
             {status === "loading" ? (
