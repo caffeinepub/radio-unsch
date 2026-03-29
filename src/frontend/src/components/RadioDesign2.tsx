@@ -101,7 +101,7 @@ function EQSilver({ isPlaying }: { isPlaying: boolean }) {
       ref={canvasRef}
       width={220}
       height={48}
-      style={{ display: "block" }}
+      style={{ display: "block", width: "100%" }}
     />
   );
 }
@@ -144,7 +144,7 @@ export function RadioDesign2() {
 
   return (
     <div
-      className="min-h-screen flex flex-col items-center justify-center px-4 py-8 relative overflow-hidden"
+      className="h-screen w-screen flex flex-col relative overflow-hidden"
       style={{ background: "#080810" }}
     >
       <div
@@ -188,37 +188,34 @@ export function RadioDesign2() {
       />
 
       <div
-        className={`w-full max-w-sm transition-all duration-700 ${
+        className={`flex-1 flex flex-col transition-all duration-700 ${
           cardVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
         }`}
       >
-        {/* Layout diferente: album art a la izquierda, texto a la derecha en top */}
+        {/* Card que llena toda la pantalla */}
         <div
-          className="relative rounded-2xl p-6 flex flex-col gap-5"
+          className="flex-1 flex flex-col gap-5 p-6 relative"
           style={{
-            background: "rgba(10,10,18,0.75)",
+            background: "rgba(10,10,18,0.85)",
             backdropFilter: "blur(40px) saturate(140%)",
-            boxShadow:
-              "0 0 60px rgba(100,100,130,0.12), 0 1px 0 rgba(180,180,200,0.06) inset",
-            border: "1px solid rgba(130,130,155,0.14)",
           }}
         >
           {/* EN VIVO */}
-          <div className="absolute top-4 right-4 flex items-center gap-1.5">
+          <div className="absolute top-5 right-5 flex items-center gap-1.5">
             <span
               className={`w-2 h-2 rounded-full transition-all${isPlaying ? " live-dot-red-blink" : ""}`}
               style={{ background: isPlaying ? "#c0392b" : "#4b5563" }}
             />
             <span
               className="text-[10px] font-bold tracking-widest uppercase"
-              style={{ color: isPlaying ? "#4ade80" : "#6b7280" }}
+              style={{ color: isPlaying ? "#e8e8ff" : "#6b7280" }}
             >
               EN VIVO
             </span>
           </div>
 
-          {/* Top row: album art + title */}
-          <div className="flex items-center gap-5 mt-4">
+          {/* Top row: album art + metadata desplazada a la derecha */}
+          <div className="flex items-center gap-5 mt-8 pl-4">
             <div
               className={`w-28 h-28 rounded-xl overflow-hidden shrink-0 ${isPlaying ? "vinyl-spinning" : ""}`}
               style={{
@@ -237,7 +234,7 @@ export function RadioDesign2() {
                 }}
               />
             </div>
-            <div className="flex flex-col gap-1.5 min-w-0">
+            <div className="flex flex-col gap-1.5 min-w-0 pl-3">
               <p
                 className="text-xs font-bold tracking-[0.3em] uppercase"
                 style={{ color: "#707088" }}
@@ -330,8 +327,11 @@ export function RadioDesign2() {
             </p>
           )}
 
-          {/* Volume + Play — horizontal */}
-          <div className="flex items-center gap-3">
+          {/* Spacer para empujar controles hacia abajo */}
+          <div className="flex-1" />
+
+          {/* Volume + Play — horizontal, al fondo */}
+          <div className="flex items-center gap-3 pb-4">
             <button
               type="button"
               onClick={toggleMute}
