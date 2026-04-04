@@ -327,11 +327,8 @@ export function RadioDesign2() {
             </p>
           )}
 
-          {/* Spacer para empujar controles hacia abajo */}
-          <div className="flex-1" />
-
           {/* Volume + Play — horizontal, al fondo */}
-          <div className="flex items-center gap-3 pb-4">
+          <div className="flex items-center gap-3 pb-4 mt-auto">
             <button
               type="button"
               onClick={toggleMute}

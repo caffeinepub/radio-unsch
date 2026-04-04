@@ -5,6 +5,7 @@ import {
   Pause,
   Play,
   Radio,
+  SkipForward,
   Users,
   Volume2,
   VolumeX,
@@ -45,7 +46,37 @@ export function RadioPlayer() {
   const animFrameRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number | null>(null);
 
+  const [interpolatedElapsed, setInterpolatedElapsed] = useState(0);
+  const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
+    null,
+  );
+
   const { data: metadata, isLoading: metaLoading } = useRadioMetadata();
+
+  useEffect(() => {
+    if (metadata?.elapsed !== undefined) {
+      setInterpolatedElapsed(metadata.elapsed);
+    }
+  }, [metadata?.elapsed]);
+
+  useEffect(() => {
+    if (isPlaying) {
+      progressIntervalRef.current = setInterval(() => {
+        setInterpolatedElapsed((prev) => prev + 1);
+      }, 1000);
+    } else {
+      if (progressIntervalRef.current !== null) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+    }
+    return () => {
+      if (progressIntervalRef.current !== null) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+    };
+  }, [isPlaying]);
 
   useEffect(() => {
     if (isPlaying) {
@@ -174,9 +205,18 @@ export function RadioPlayer() {
     (isPlaying ? "Cargando información..." : "Presiona play para escuchar");
   const artistName = metadata?.artist || "Radio UNSCH";
 
+  const duration = metadata?.duration ?? 0;
+  const progressPct =
+    isPlaying && duration > 0
+      ? Math.min((interpolatedElapsed / duration) * 100, 100)
+      : 0;
+
+  const nextTitle = metadata?.nextTitle ?? "";
+  const nextArtist = metadata?.nextArtist ?? "";
+  const listeners = metadata?.listeners ?? 0;
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden px-4 py-8">
-      {/* Pure black background */}
       <div
         className="fixed inset-0 -z-10"
         style={{
@@ -237,10 +277,7 @@ export function RadioPlayer() {
             {isPlaying && (
               <div
                 className="pulse-ring absolute inset-0 rounded-full"
-                style={{
-                  border: `2px solid ${TEAL}`,
-                  margin: "-6px",
-                }}
+                style={{ border: `2px solid ${TEAL}`, margin: "-6px" }}
               />
             )}
             <div
@@ -294,10 +331,7 @@ export function RadioPlayer() {
                   <div
                     key={bar.cls}
                     className={`w-2 rounded-sm ${bar.cls}`}
-                    style={{
-                      background: TEAL_BRIGHT,
-                      minHeight: "4px",
-                    }}
+                    style={{ background: TEAL_BRIGHT, minHeight: "4px" }}
                   />
                 ))}
               </motion.div>
@@ -364,9 +398,7 @@ export function RadioPlayer() {
                   )}
                   <p
                     className="text-xl font-bold leading-tight"
-                    style={{
-                      color: "oklch(92 0.005 0)",
-                    }}
+                    style={{ color: "oklch(92 0.005 0)" }}
                   >
                     {songTitle}
                   </p>
@@ -385,6 +417,79 @@ export function RadioPlayer() {
                 </motion.div>
               )}
             </AnimatePresence>
+          </div>
+
+          {/* Progress bar + Next song + Listeners */}
+          <div className="w-full flex flex-col gap-2 -mt-3">
+            <AnimatePresence>
+              {isPlaying && duration > 0 && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="w-full h-0.5 rounded-full overflow-hidden"
+                  style={{ background: "oklch(20 0.005 0)" }}
+                >
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${progressPct}%`,
+                      background: TEAL_BRIGHT,
+                      transition: "width 1s linear",
+                    }}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <div className="flex items-center justify-between gap-2">
+              {nextTitle ? (
+                <div
+                  className="flex items-center gap-1.5 min-w-0"
+                  style={{ color: "oklch(45 0.005 0)" }}
+                >
+                  <SkipForward
+                    className="w-3.5 h-3.5 shrink-0"
+                    style={{ color: TEAL_DIM }}
+                  />
+                  <span className="text-sm truncate">
+                    <span
+                      className="font-medium"
+                      style={{ color: "oklch(38 0.04 200)" }}
+                    >
+                      A continuación:{" "}
+                    </span>
+                    <span
+                      className="font-medium"
+                      style={{ color: "oklch(52 0.005 0)" }}
+                    >
+                      {nextTitle}
+                      {nextArtist ? ` — ${nextArtist}` : ""}
+                    </span>
+                  </span>
+                </div>
+              ) : (
+                <div />
+              )}
+
+              {isPlaying && listeners > 0 && (
+                <div
+                  className="flex items-center gap-1 shrink-0 px-2 py-0.5 rounded-full"
+                  style={{
+                    background: "oklch(37 0.07 200 / 0.12)",
+                    border: "1px solid oklch(37 0.07 200 / 0.2)",
+                  }}
+                >
+                  <Users className="w-2.5 h-2.5" style={{ color: TEAL_MID }} />
+                  <span
+                    className="text-xs"
+                    style={{ color: "oklch(45 0.06 200)" }}
+                  >
+                    {listeners}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Play / Pause */}

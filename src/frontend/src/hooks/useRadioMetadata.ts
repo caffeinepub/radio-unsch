@@ -20,9 +20,7 @@ export function useRadioMetadata() {
   return useQuery<NowPlaying>({
     queryKey: ["radioMetadata"],
     queryFn: async () => {
-      const res = await fetch(
-        "https://studio5.live/api/nowplaying/radio_unsch",
-      );
+      const res = await fetch("https://studio5.site/public/radio_unsch");
       const data = await res.json();
       return {
         title: data.now_playing?.song?.title ?? "",
