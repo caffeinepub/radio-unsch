@@ -1,5 +1,5 @@
 // Service Worker for Radio UNSCH - background audio support
-const CACHE_NAME = 'radio-unsch-v2';
+const CACHE_NAME = 'radio-unsch-v3';
 const APP_SHELL = ['/', '/manifest.json'];
 
 self.addEventListener('install', (event) => {
@@ -22,10 +22,12 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // NEVER intercept audio stream requests
-  if (url.hostname === 'studio5.live') return;
+  // NEVER intercept audio/stream requests from the radio server
+  if (url.hostname.includes('studio5.site')) return;
+  if (url.hostname.includes("studio5.site")) return;
+  if (url.hostname.includes("studio5.live")
 
-  // Only handle same-origin requests
+  // Only cache same-origin requests
   if (url.origin !== location.origin) return;
 
   // Network-first with cache fallback for same-origin

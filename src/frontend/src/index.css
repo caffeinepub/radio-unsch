@@ -62,7 +62,7 @@
   body {
     height: 100%;
     color-scheme: dark;
-    background-color: #000000;
+    background-color: #020a14;
   }
 
   body {
@@ -74,87 +74,158 @@
 
   #root {
     height: 100%;
-    background-color: #000000;
+    background-color: transparent;
   }
 }
 
-/* Vinyl spin — CSS animation (no JS re-renders) */
-@keyframes vinyl-spin {
+/* ── COSMOS CARD ── */
+.cosmos-card {
+  position: relative;
+  border-radius: 1.5rem;
+  padding: 1.5rem 1.25rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: rgba(4, 14, 26, 0.82);
+  backdrop-filter: blur(36px) saturate(160%);
+  border: 1px solid rgba(0, 150, 180, 0.18);
+  box-shadow: 0 8px 80px rgba(0, 100, 130, 0.28), 0 0 0 1px
+    rgba(0, 180, 220, 0.08), inset 0 1px 0 rgba(0, 200, 230, 0.07);
+  animation: card-enter 0.7s ease-out both;
+}
+
+@keyframes card-enter {
   from {
-    transform: rotate(0deg);
+    opacity: 0;
+    transform: translateY(24px) scale(0.97);
   }
   to {
-    transform: rotate(360deg);
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
-.vinyl-spinning {
-  animation: vinyl-spin 20s linear infinite;
+
+/* ── METADATA PANEL ── */
+.metadata-panel {
+  width: 100%;
+  background: rgba(2, 14, 24, 0.55);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 140, 170, 0.18);
+  border-radius: 1rem;
+  padding: 1rem 1.125rem;
 }
 
-/* Card fade-in entrance */
-.radio-card-enter {
-  opacity: 0;
-  transform: scale(0.95);
-}
-.radio-card-visible {
-  opacity: 1;
-  transform: scale(1);
-  transition: opacity 0.7s ease-out, transform 0.7s ease-out;
-}
-
-/* Play button interactions */
-.play-btn {
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-.play-btn:hover:not(:disabled) {
-  transform: scale(1.05);
-  box-shadow: 0 0 30px rgba(0, 80, 95, 0.4) !important;
-}
-.play-btn:active:not(:disabled) {
-  transform: scale(0.95);
-}
-
-@keyframes pulse-ring {
+/* ── STATION TITLE SHIMMER ── */
+@keyframes shimmer-pass {
   0% {
-    transform: scale(1);
-    opacity: 0.5;
+    background-position: -200% center;
   }
   100% {
-    transform: scale(1.5);
+    background-position: 200% center;
+  }
+}
+.station-title {
+  display: inline-block;
+}
+.station-title.shimmer {
+  background: linear-gradient(
+    90deg,
+    #c8c8d8 0%,
+    #c8c8d8 35%,
+    #e8e8ff 48%,
+    #ffffff 50%,
+    #e8e8ff 52%,
+    #c8c8d8 65%,
+    #c8c8d8 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer-pass 6s linear infinite;
+}
+
+/* ── PLAY BUTTON ── */
+.play-button-cosmos {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #50dcd2;
+  background: rgba(0, 80, 100, 0.18);
+  border: 2px solid rgba(0, 180, 210, 0.65);
+  box-shadow: 0 0 28px rgba(0, 100, 130, 0.4), inset 0 1px 0
+    rgba(0, 200, 230, 0.1);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+.play-button-cosmos::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 40% 35%,
+    rgba(80, 220, 210, 0.12) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+}
+.play-button-cosmos:not(:disabled):hover {
+  transform: scale(1.07);
+  box-shadow: 0 0 50px rgba(0, 180, 220, 0.65), inset 0 1px 0
+    rgba(0, 200, 230, 0.1);
+  background: rgba(0, 100, 130, 0.28);
+}
+.play-button-cosmos:not(:disabled):active {
+  transform: scale(0.94);
+}
+.play-button-cosmos:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── PULSE RING ── */
+@keyframes pulse-ring {
+  0% {
+    transform: translateX(-50%) scale(1);
+    opacity: 0.55;
+  }
+  100% {
+    transform: translateX(-50%) scale(1.55);
     opacity: 0;
   }
 }
 .pulse-ring {
-  animation: pulse-ring 1.5s ease-out infinite;
+  animation: pulse-ring 1.6s ease-out infinite;
+  pointer-events: none;
 }
 
+/* ── EN VIVO DOT ── */
+.live-dot-off {
+  background: #6b7280;
+}
 @keyframes live-blink-red {
   0%,
   100% {
     opacity: 1;
-    background-color: #c0392b;
+    background-color: #dc2626;
   }
   50% {
     opacity: 0.2;
-    background-color: #c0392b;
+    background-color: #dc2626;
   }
 }
 .live-dot-red-blink {
-  animation: live-blink-red 0.9s ease-in-out infinite;
-  background-color: #c0392b !important;
+  animation: live-blink-red 0.95s ease-in-out infinite;
+  background-color: #dc2626 !important;
 }
 
-audio.media-session-audio {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
-/* Custom volume slider */
+/* ── VOLUME SLIDER ── */
 .custom-volume-slider {
   -webkit-appearance: none;
   appearance: none;
@@ -164,39 +235,43 @@ audio.media-session-audio {
   cursor: pointer;
   background: linear-gradient(
     to right,
-    #3a6a75 0%,
-    #5a9aaa var(--val, 80%),
-    rgba(0, 80, 95, 0.15) var(--val, 80%),
+    #2a7080 0%,
+    #40a0b4 var(--val, 85%),
+    rgba(0, 80, 95, 0.15) var(--val, 85%),
     rgba(0, 80, 95, 0.15) 100%
   );
   transition: background 0.1s;
 }
 .custom-volume-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
-  appearance: none;
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: #5a9aaa;
-  box-shadow: 0 0 6px rgba(90, 154, 170, 0.4);
+  background: #40a8bc;
+  box-shadow: 0 0 6px rgba(64, 168, 188, 0.45);
   cursor: pointer;
   transition: box-shadow 0.2s, transform 0.2s;
 }
 .custom-volume-slider::-webkit-slider-thumb:hover {
-  box-shadow: 0 0 10px rgba(90, 154, 170, 0.6);
-  transform: scale(1.15);
+  box-shadow: 0 0 12px rgba(64, 168, 188, 0.7);
+  transform: scale(1.18);
 }
 .custom-volume-slider::-moz-range-thumb {
   width: 14px;
   height: 14px;
   border: none;
   border-radius: 50%;
-  background: #5a9aaa;
-  box-shadow: 0 0 6px rgba(90, 154, 170, 0.4);
-  cursor: pointer;
+  background: #40a8bc;
+  box-shadow: 0 0 6px rgba(64, 168, 188, 0.45);
 }
-.custom-volume-slider::-moz-range-track {
-  height: 4px;
-  border-radius: 9999px;
-  background: rgba(0, 80, 95, 0.15);
+
+/* ── AUDIO HIDDEN ── */
+audio {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
