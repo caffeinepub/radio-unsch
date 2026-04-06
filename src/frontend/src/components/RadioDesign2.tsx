@@ -10,7 +10,6 @@ import {
   Play,
   Radio,
   SkipForward,
-  Users,
   Volume2,
   VolumeX,
 } from "lucide-react";
@@ -278,7 +277,6 @@ export function RadioDesign2() {
   const albumName = meta?.album || "";
   const nextTitle = meta?.nextTitle || "";
   const nextArtist = meta?.nextArtist || "";
-  const listeners = meta?.listeners || 0;
   const duration = meta?.duration || 0;
 
   useEffect(() => {
@@ -800,46 +798,25 @@ export function RadioDesign2() {
           </div>
         )}
 
-        {/* Next + listeners */}
-        <div className="flex items-center justify-between gap-2">
-          {nextTitle ? (
-            <div
-              className="flex items-center gap-1.5 min-w-0"
-              style={{ color: "rgba(0,120,140,0.7)" }}
+        {/* Next song */}
+        {nextTitle && (
+          <div
+            className="flex items-center gap-1.5 min-w-0"
+            style={{ color: "rgba(0,120,140,0.7)" }}
+          >
+            <SkipForward className="w-3 h-3 shrink-0" />
+            <span
+              className="text-xs truncate"
+              style={{ color: "rgba(100,180,195,0.65)" }}
             >
-              <SkipForward className="w-3 h-3 shrink-0" />
-              <span
-                className="text-xs truncate"
-                style={{ color: "rgba(100,180,195,0.65)" }}
-              >
-                <span style={{ color: "rgba(0,140,165,0.9)" }}>
-                  A continuación:{" "}
-                </span>
-                {nextTitle}
-                {nextArtist ? ` — ${nextArtist}` : ""}
+              <span style={{ color: "rgba(0,140,165,0.9)" }}>
+                A continuación:{" "}
               </span>
-            </div>
-          ) : (
-            <div />
-          )}
-          {isPlaying && listeners > 0 && (
-            <div
-              className="flex items-center gap-1 shrink-0 px-2 py-0.5 rounded-full"
-              style={{
-                background: "rgba(0,100,120,0.15)",
-                border: "1px solid rgba(0,150,180,0.2)",
-              }}
-            >
-              <Users className="w-2.5 h-2.5" style={{ color: "#00a0b8" }} />
-              <span
-                className="text-xs"
-                style={{ color: "rgba(0,160,184,0.8)" }}
-              >
-                {listeners}
-              </span>
-            </div>
-          )}
-        </div>
+              {nextTitle}
+              {nextArtist ? ` — ${nextArtist}` : ""}
+            </span>
+          </div>
+        )}
 
         {/* Volume control */}
         <div className="flex items-center gap-2.5 w-full">
