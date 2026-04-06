@@ -2,6 +2,7 @@
  * Diseño COSMOS — Radio UNSCH
  * Animado, elegante, con fondo de partículas y ondas de audio.
  * Audio engine robusto para reproducción con pantalla bloqueada.
+ * Metadatos: carátula, artista y canción prominentes.
  */
 import {
   Music,
@@ -42,7 +43,6 @@ function AnimatedBackground({ isPlaying }: { isPlaying: boolean }) {
     resize();
     window.addEventListener("resize", resize);
 
-    // Particle system
     const PARTICLE_COUNT = 60;
     type Particle = {
       x: number;
@@ -62,7 +62,7 @@ function AnimatedBackground({ isPlaying }: { isPlaying: boolean }) {
         vy: (Math.random() - 0.5) * 0.4,
         r: Math.random() * 2.5 + 0.5,
         alpha: Math.random() * 0.4 + 0.1,
-        hue: Math.random() * 40 + 180, // teal-blue range
+        hue: Math.random() * 40 + 180,
       }),
     );
 
@@ -73,7 +73,6 @@ function AnimatedBackground({ isPlaying }: { isPlaying: boolean }) {
       const w = canvas.width;
       const h = canvas.height;
 
-      // Background gradient
       const grad = ctx.createRadialGradient(
         w / 2,
         h * 0.38,
@@ -88,7 +87,6 @@ function AnimatedBackground({ isPlaying }: { isPlaying: boolean }) {
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, w, h);
 
-      // Aurora waves
       for (let i = 0; i < 3; i++) {
         const phase = (ts / 4000 + i * 1.2) % (Math.PI * 2);
         ctx.save();
@@ -114,7 +112,6 @@ function AnimatedBackground({ isPlaying }: { isPlaying: boolean }) {
         ctx.restore();
       }
 
-      // Particles
       for (const p of particles) {
         p.x += p.vx * speed * (dt / 16);
         p.y += p.vy * speed * (dt / 16);
@@ -190,7 +187,6 @@ function EQCanvas({ isPlaying }: { isPlaying: boolean }) {
         const b = bars[i];
         if (isPlaying) {
           b.ph += (b.spd * dt) / 1000;
-          // Frequency-like variation: low freqs tall, high freqs short
           const freqShape = i < 5 ? 0.9 : i < 10 ? 1.0 : i < 18 ? 0.75 : 0.5;
           b.target =
             4 +
@@ -239,15 +235,14 @@ function EQCanvas({ isPlaying }: { isPlaying: boolean }) {
     <canvas
       ref={canvasRef}
       width={240}
-      height={52}
-      style={{ width: "100%", height: "52px", display: "block" }}
+      height={44}
+      style={{ width: "100%", height: "44px", display: "block" }}
     />
   );
 }
 
 // ─────────────────── MAIN COMPONENT ───────────────────
 export function RadioDesign2() {
-  // Audio refs
   const audioRef = useRef<HTMLAudioElement>(null);
   const silentRef = useRef<HTMLAudioElement>(null);
   const wakeLockRef = useRef<any>(null);
@@ -259,14 +254,13 @@ export function RadioDesign2() {
   const volRef = useRef(85);
   const isPlayingRef = useRef(false);
 
-  // UI state
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(85);
   const [isMuted, setIsMuted] = useState(false);
   const [status, setStatus] = useState<
     "idle" | "loading" | "playing" | "error"
   >("idle");
-  const [errorMsg, setErrorMsg] = useState("");
+  const [_errorMsg, setErrorMsg] = useState("");
   const [rotation, setRotation] = useState(0);
   const rotRef = useRef(0);
   const afRef = useRef<number | null>(null);
@@ -275,12 +269,11 @@ export function RadioDesign2() {
   const elapsedRef = useRef(0);
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Metadata
   const { data: meta } = useRadioMetadata();
 
   const songTitle =
     meta?.title || (isPlaying ? "Cargando..." : "Presiona play");
-  const artistName = meta?.artist || "Radio UNSCH";
+  const artistName = meta?.artist || "";
   const albumArt = meta?.art || "";
   const albumName = meta?.album || "";
   const nextTitle = meta?.nextTitle || "";
@@ -288,7 +281,6 @@ export function RadioDesign2() {
   const listeners = meta?.listeners || 0;
   const duration = meta?.duration || 0;
 
-  // Sync elapsed from metadata
   useEffect(() => {
     if (meta?.elapsed !== undefined) {
       setElapsed(meta.elapsed);
@@ -296,7 +288,6 @@ export function RadioDesign2() {
     }
   }, [meta?.elapsed]);
 
-  // Progress ticker
   useEffect(() => {
     if (isPlaying) {
       progressRef.current = setInterval(() => {
@@ -311,7 +302,6 @@ export function RadioDesign2() {
     };
   }, [isPlaying]);
 
-  // Vinyl rotation
   useEffect(() => {
     if (isPlaying) {
       const animate = (ts: number) => {
@@ -332,12 +322,10 @@ export function RadioDesign2() {
     };
   }, [isPlaying]);
 
-  // Keep isPlayingRef in sync
   useEffect(() => {
     isPlayingRef.current = isPlaying;
   }, [isPlaying]);
 
-  // ── Audio context keepalive ──
   const startAudioCtx = useCallback(() => {
     try {
       if (audioCtxRef.current) return;
@@ -373,7 +361,6 @@ export function RadioDesign2() {
     } catch {}
   }, []);
 
-  // ── Wake Lock ──
   const acquireWakeLock = useCallback(async () => {
     try {
       if (!("wakeLock" in navigator)) return;
@@ -399,7 +386,6 @@ export function RadioDesign2() {
     } catch {}
   }, []);
 
-  // ── Reconnect ──
   const scheduleReconnect = useCallback(() => {
     if (reconnectRef.current) return;
     setStatus("loading");
@@ -436,7 +422,6 @@ export function RadioDesign2() {
     [scheduleReconnect],
   );
 
-  // ── Keep-alive loop (Web Worker + interval) ──
   const stopKeepAlive = useCallback(() => {
     if (keepAliveRef.current) {
       clearInterval(keepAliveRef.current);
@@ -468,7 +453,6 @@ export function RadioDesign2() {
     } catch {}
   }, [stopKeepAlive, resumeAudioCtx, attemptResume]);
 
-  // ── Visibility & page events ──
   useEffect(() => {
     const onVisible = () => {
       if (document.visibilityState === "visible") {
@@ -496,7 +480,6 @@ export function RadioDesign2() {
     };
   }, [attemptResume, resumeAudioCtx, acquireWakeLock]);
 
-  // ── Media Session ──
   const setupMediaSession = useCallback(() => {
     if (!("mediaSession" in navigator)) return;
     navigator.mediaSession.metadata = new MediaMetadata({
@@ -541,7 +524,6 @@ export function RadioDesign2() {
     if (isPlaying) setupMediaSession();
   }, [isPlaying, setupMediaSession]);
 
-  // ── Toggle Play ──
   const handleToggle = async () => {
     const audio = audioRef.current;
     const silent = silentRef.current;
@@ -613,10 +595,8 @@ export function RadioDesign2() {
 
   return (
     <div className="h-screen w-screen flex flex-col items-center justify-center relative overflow-hidden">
-      {/* Animated canvas background */}
       <AnimatedBackground isPlaying={isPlaying} />
 
-      {/* Hidden audios */}
       {/* biome-ignore lint/a11y/useMediaCaption: streaming radio */}
       <audio
         ref={audioRef}
@@ -669,8 +649,8 @@ export function RadioDesign2() {
           </span>
         </div>
 
-        {/* Station name — small */}
-        <div className="text-center mt-6 mb-2">
+        {/* Station name */}
+        <div className="text-center mt-6 mb-1">
           <h1
             className={isPlaying ? "station-title shimmer" : "station-title"}
             style={{
@@ -686,191 +666,183 @@ export function RadioDesign2() {
           </h1>
         </div>
 
-        {/* Album art — rotating vinyl */}
-        <div className="flex justify-center my-3 relative">
-          {isPlaying && (
-            <>
-              <div
-                className="pulse-ring absolute"
-                style={{
-                  width: 152,
-                  height: 152,
-                  borderRadius: "50%",
-                  border: "2px solid rgba(0,180,210,0.6)",
-                  top: -6,
-                  left: "50%",
-                  transform: "translateX(-50%)",
-                }}
-              />
-              <div
-                className="pulse-ring absolute"
-                style={{
-                  width: 172,
-                  height: 172,
-                  borderRadius: "50%",
-                  border: "1px solid rgba(0,130,160,0.3)",
-                  top: -16,
-                  left: "50%",
-                  transform: "translateX(-50%)",
-                  animationDelay: "0.5s",
-                }}
-              />
-            </>
-          )}
+        {/* ── ALBUM ART — square, prominent ── */}
+        <div className="flex justify-center my-2">
           <div
             style={{
-              width: 140,
-              height: 140,
-              borderRadius: "50%",
+              position: "relative",
+              width: 180,
+              height: 180,
+              borderRadius: "1rem",
               overflow: "hidden",
-              transform: `rotate(${rotation}deg)`,
-              transition: isPlaying ? "none" : "transform 0.8s ease-out",
               boxShadow: isPlaying
-                ? "0 0 0 4px rgba(0,150,180,0.8), 0 0 60px rgba(0,100,130,0.6)"
-                : "0 0 0 2px rgba(0,80,100,0.4), 0 0 30px rgba(0,50,70,0.3)",
+                ? "0 0 0 2px rgba(0,180,210,0.7), 0 8px 48px rgba(0,100,130,0.65)"
+                : "0 0 0 1px rgba(0,80,100,0.35), 0 4px 24px rgba(0,50,70,0.3)",
+              transition: "box-shadow 0.4s ease",
             }}
           >
             <img
               src={albumArt || LOGO_URL}
-              alt="Radio UNSCH"
+              alt={songTitle}
               style={{
                 width: "100%",
                 height: "100%",
                 objectFit: "cover",
                 display: "block",
+                transform: isPlaying
+                  ? `rotate(${rotation * 0.05}deg) scale(1.04)`
+                  : "none",
+                transition: isPlaying ? "none" : "transform 0.8s ease-out",
               }}
               onError={(e) => {
                 (e.target as HTMLImageElement).src = LOGO_URL;
               }}
             />
+            {/* overlay glow */}
+            {isPlaying && (
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  background:
+                    "radial-gradient(ellipse at 50% 100%, rgba(0,180,210,0.15) 0%, transparent 70%)",
+                  pointerEvents: "none",
+                }}
+              />
+            )}
           </div>
+        </div>
+
+        {/* ── SONG TITLE + ARTIST — prominent ── */}
+        <div
+          style={{
+            textAlign: "center",
+            padding: "0.25rem 0.25rem 0",
+          }}
+        >
+          <p
+            style={{
+              fontSize: "1.05rem",
+              fontWeight: 700,
+              color: "rgba(200,235,240,0.96)",
+              lineHeight: 1.25,
+              marginBottom: "0.3rem",
+              letterSpacing: "0.01em",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {songTitle}
+          </p>
+          {artistName && (
+            <div
+              className="flex items-center justify-center gap-1.5"
+              style={{ marginBottom: "0.1rem" }}
+            >
+              <Music
+                className="w-3.5 h-3.5 shrink-0"
+                style={{ color: "#00a0b8" }}
+              />
+              <p
+                style={{
+                  fontSize: "0.88rem",
+                  fontWeight: 500,
+                  color: "rgba(100,200,215,0.85)",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {artistName}
+              </p>
+            </div>
+          )}
+          {albumName && (
+            <p
+              style={{
+                fontSize: "0.72rem",
+                color: "rgba(70,150,170,0.6)",
+                marginTop: "0.1rem",
+              }}
+            >
+              {albumName}
+            </p>
+          )}
         </div>
 
         {/* EQ Bars */}
-        <div style={{ height: 52, margin: "0 0 4px" }}>
+        <div style={{ height: 44, margin: "0" }}>
           <EQCanvas isPlaying={isPlaying && status === "playing"} />
         </div>
 
-        {/* Metadata panel */}
-        <div className="metadata-panel">
-          {status === "loading" ? (
+        {/* Progress bar */}
+        {isPlaying && duration > 0 && (
+          <div
+            style={{
+              height: 3,
+              borderRadius: 9999,
+              background: "rgba(0,80,100,0.3)",
+              overflow: "hidden",
+              marginTop: "-4px",
+            }}
+          >
             <div
-              className="flex items-center gap-2 justify-center py-2"
-              style={{ color: "#555" }}
-            >
-              <Radio
-                className="w-4 h-4 animate-pulse"
-                style={{ color: "#00a0b8" }}
-              />
-              <span className="text-sm">{errorMsg || "Conectando..."}</span>
-            </div>
-          ) : status === "error" ? (
-            <p className="text-sm text-center py-2" style={{ color: "#e55" }}>
-              {errorMsg}
-            </p>
-          ) : (
-            <div className="flex flex-col gap-1.5">
-              <p
-                className="text-base font-bold leading-tight"
-                style={{ color: "rgba(180,230,235,0.92)" }}
-              >
-                {songTitle}
-              </p>
-              <div className="flex items-center gap-1.5">
-                <Music
-                  className="w-3.5 h-3.5 shrink-0"
-                  style={{ color: "#00a0b8" }}
-                />
-                <p
-                  className="text-sm"
-                  style={{ color: "rgba(120,195,205,0.75)" }}
-                >
-                  {artistName}
-                </p>
-              </div>
-              {albumName && (
-                <p
-                  className="text-xs"
-                  style={{
-                    color: "rgba(80,160,175,0.6)",
-                    paddingLeft: "1.375rem",
-                  }}
-                >
-                  {albumName}
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Progress bar */}
-          {isPlaying && duration > 0 && (
-            <div className="mt-3">
-              <div
-                style={{
-                  height: 3,
-                  borderRadius: 9999,
-                  background: "rgba(0,80,100,0.3)",
-                  overflow: "hidden",
-                }}
-              >
-                <div
-                  style={{
-                    height: "100%",
-                    width: `${progressPct}%`,
-                    background: "linear-gradient(90deg,#00a0b8,#50dcd2)",
-                    borderRadius: 9999,
-                    transition: "width 1s linear",
-                    boxShadow: "0 0 8px rgba(80,220,210,0.5)",
-                  }}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Next + listeners */}
-          <div className="flex items-center justify-between mt-2.5 gap-2">
-            {nextTitle ? (
-              <div
-                className="flex items-center gap-1.5 min-w-0"
-                style={{ color: "rgba(0,120,140,0.7)" }}
-              >
-                <SkipForward className="w-3 h-3 shrink-0" />
-                <span
-                  className="text-xs truncate"
-                  style={{ color: "rgba(100,180,195,0.65)" }}
-                >
-                  <span style={{ color: "rgba(0,140,165,0.9)" }}>
-                    A continuación:{" "}
-                  </span>
-                  {nextTitle}
-                  {nextArtist ? ` — ${nextArtist}` : ""}
-                </span>
-              </div>
-            ) : (
-              <div />
-            )}
-            {isPlaying && listeners > 0 && (
-              <div
-                className="flex items-center gap-1 shrink-0 px-2 py-0.5 rounded-full"
-                style={{
-                  background: "rgba(0,100,120,0.15)",
-                  border: "1px solid rgba(0,150,180,0.2)",
-                }}
-              >
-                <Users className="w-2.5 h-2.5" style={{ color: "#00a0b8" }} />
-                <span
-                  className="text-xs"
-                  style={{ color: "rgba(0,160,184,0.8)" }}
-                >
-                  {listeners}
-                </span>
-              </div>
-            )}
+              style={{
+                height: "100%",
+                width: `${progressPct}%`,
+                background: "linear-gradient(90deg,#00a0b8,#50dcd2)",
+                borderRadius: 9999,
+                transition: "width 1s linear",
+                boxShadow: "0 0 8px rgba(80,220,210,0.5)",
+              }}
+            />
           </div>
+        )}
+
+        {/* Next + listeners */}
+        <div className="flex items-center justify-between gap-2">
+          {nextTitle ? (
+            <div
+              className="flex items-center gap-1.5 min-w-0"
+              style={{ color: "rgba(0,120,140,0.7)" }}
+            >
+              <SkipForward className="w-3 h-3 shrink-0" />
+              <span
+                className="text-xs truncate"
+                style={{ color: "rgba(100,180,195,0.65)" }}
+              >
+                <span style={{ color: "rgba(0,140,165,0.9)" }}>
+                  A continuación:{" "}
+                </span>
+                {nextTitle}
+                {nextArtist ? ` — ${nextArtist}` : ""}
+              </span>
+            </div>
+          ) : (
+            <div />
+          )}
+          {isPlaying && listeners > 0 && (
+            <div
+              className="flex items-center gap-1 shrink-0 px-2 py-0.5 rounded-full"
+              style={{
+                background: "rgba(0,100,120,0.15)",
+                border: "1px solid rgba(0,150,180,0.2)",
+              }}
+            >
+              <Users className="w-2.5 h-2.5" style={{ color: "#00a0b8" }} />
+              <span
+                className="text-xs"
+                style={{ color: "rgba(0,160,184,0.8)" }}
+              >
+                {listeners}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Volume control */}
-        <div className="flex items-center gap-2.5 w-full mt-1">
+        <div className="flex items-center gap-2.5 w-full">
           <button
             type="button"
             onClick={toggleMute}
@@ -904,7 +876,7 @@ export function RadioDesign2() {
         </div>
 
         {/* Play button */}
-        <div className="flex justify-center mt-3 mb-1">
+        <div className="flex justify-center mt-1 mb-1">
           <button
             type="button"
             onClick={handleToggle}

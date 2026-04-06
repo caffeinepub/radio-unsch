@@ -20,7 +20,9 @@ export function useRadioMetadata() {
   return useQuery<NowPlaying>({
     queryKey: ["radioMetadata"],
     queryFn: async () => {
-      const res = await fetch("https://studio5.site/public/radio_unsch");
+      const res = await fetch(
+        "https://studio5.site/api/nowplaying/radio_unsch",
+      );
       const data = await res.json();
       return {
         title: data.now_playing?.song?.title ?? "",
@@ -38,7 +40,7 @@ export function useRadioMetadata() {
         isOnline: data.is_online ?? false,
       };
     },
-    refetchInterval: 15000,
-    staleTime: 10000,
+    refetchInterval: 10000,
+    staleTime: 8000,
   });
 }
