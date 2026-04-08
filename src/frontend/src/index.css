@@ -265,6 +265,16 @@
   box-shadow: 0 0 6px rgba(64, 168, 188, 0.45);
 }
 
+/* ── ALBUM ART SPIN ── */
+@keyframes spin-album {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* ── AUDIO HIDDEN ── */
 audio {
   position: absolute;

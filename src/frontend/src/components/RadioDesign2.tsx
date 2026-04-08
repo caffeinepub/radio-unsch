@@ -260,10 +260,6 @@ export function RadioDesign2() {
     "idle" | "loading" | "playing" | "error"
   >("idle");
   const [_errorMsg, setErrorMsg] = useState("");
-  const [rotation, setRotation] = useState(0);
-  const rotRef = useRef(0);
-  const afRef = useRef<number | null>(null);
-  const lastTsRef = useRef<number | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const elapsedRef = useRef(0);
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -297,26 +293,6 @@ export function RadioDesign2() {
     }
     return () => {
       if (progressRef.current) clearInterval(progressRef.current);
-    };
-  }, [isPlaying]);
-
-  useEffect(() => {
-    if (isPlaying) {
-      const animate = (ts: number) => {
-        if (!lastTsRef.current) lastTsRef.current = ts;
-        const dt = ts - lastTsRef.current;
-        lastTsRef.current = ts;
-        rotRef.current = (rotRef.current + (dt / 1000) * 20) % 360;
-        setRotation(rotRef.current);
-        afRef.current = requestAnimationFrame(animate);
-      };
-      afRef.current = requestAnimationFrame(animate);
-    } else {
-      if (afRef.current) cancelAnimationFrame(afRef.current);
-      lastTsRef.current = null;
-    }
-    return () => {
-      if (afRef.current) cancelAnimationFrame(afRef.current);
     };
   }, [isPlaying]);
 
@@ -687,10 +663,10 @@ export function RadioDesign2() {
                 height: "100%",
                 objectFit: "cover",
                 display: "block",
-                transform: isPlaying
-                  ? `rotate(${rotation * 0.05}deg) scale(1.04)`
-                  : "none",
-                transition: isPlaying ? "none" : "transform 0.8s ease-out",
+                animation: "spin-album 12s linear infinite",
+                animationPlayState: isPlaying ? "running" : "paused",
+                transform: isPlaying ? "scale(1.04)" : "scale(1)",
+                transition: "transform 0.5s ease",
               }}
               onError={(e) => {
                 (e.target as HTMLImageElement).src = LOGO_URL;
