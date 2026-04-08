@@ -642,48 +642,58 @@ export function RadioDesign2() {
 
         {/* ── ALBUM ART — square, prominent ── */}
         <div className="flex justify-center my-2">
+          {/* Rotating outer frame — border glow + image spin together */}
           <div
             style={{
               position: "relative",
               width: 180,
               height: 180,
               borderRadius: "1rem",
-              overflow: "hidden",
               boxShadow: isPlaying
                 ? "0 0 0 2px rgba(0,180,210,0.7), 0 8px 48px rgba(0,100,130,0.65)"
                 : "0 0 0 1px rgba(0,80,100,0.35), 0 4px 24px rgba(0,50,70,0.3)",
               transition: "box-shadow 0.4s ease",
+              animation: "spin-album 12s linear infinite",
+              animationPlayState: isPlaying ? "running" : "paused",
             }}
           >
-            <img
-              src={albumArt || LOGO_URL}
-              alt={songTitle}
+            {/* Inner clip — keeps image square inside the rotating frame */}
+            <div
               style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-                display: "block",
-                animation: "spin-album 12s linear infinite",
-                animationPlayState: isPlaying ? "running" : "paused",
-                transform: isPlaying ? "scale(1.04)" : "scale(1)",
-                transition: "transform 0.5s ease",
+                position: "absolute",
+                inset: 0,
+                borderRadius: "1rem",
+                overflow: "hidden",
               }}
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = LOGO_URL;
-              }}
-            />
-            {/* overlay glow */}
-            {isPlaying && (
-              <div
+            >
+              <img
+                src={albumArt || LOGO_URL}
+                alt={songTitle}
                 style={{
-                  position: "absolute",
-                  inset: 0,
-                  background:
-                    "radial-gradient(ellipse at 50% 100%, rgba(0,180,210,0.15) 0%, transparent 70%)",
-                  pointerEvents: "none",
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  display: "block",
+                  transform: isPlaying ? "scale(1.04)" : "scale(1)",
+                  transition: "transform 0.5s ease",
+                }}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = LOGO_URL;
                 }}
               />
-            )}
+              {/* overlay glow */}
+              {isPlaying && (
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    background:
+                      "radial-gradient(ellipse at 50% 100%, rgba(0,180,210,0.15) 0%, transparent 70%)",
+                    pointerEvents: "none",
+                  }}
+                />
+              )}
+            </div>
           </div>
         </div>
 
